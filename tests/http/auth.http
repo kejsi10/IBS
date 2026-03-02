@@ -1,0 +1,185 @@
+### Authentication API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Login & Token Management
+### ============================================
+
+### Login with email and password
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the tokens
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+@refreshToken = {{loginRequest.response.body.refreshToken}}
+
+### Login with subdomain (alternative)
+# @name loginWithSubdomain
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!",
+  "subdomain": "demo"
+}
+
+### ============================================
+### Token Refresh
+### ============================================
+
+### Refresh the access token
+# @name refreshRequest
+POST {{baseUrl}}/auth/refresh
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "accessToken": "{{loginRequest.response.body.accessToken}}",
+  "refreshToken": "{{refreshToken}}"
+}
+
+### Update tokens after refresh
+@newAuthToken = Bearer {{refreshRequest.response.body.accessToken}}
+@newRefreshToken = {{refreshRequest.response.body.refreshToken}}
+
+### ============================================
+### User Info & Logout
+### ============================================
+
+### Get current user information
+GET {{baseUrl}}/auth/me
+Authorization: {{authToken}}
+
+### Logout (invalidate refresh token)
+POST {{baseUrl}}/auth/logout
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+
+{
+  "refreshToken": "{{refreshToken}}"
+}
+
+### ============================================
+### Password Management
+### ============================================
+
+### Request password reset (forgot password)
+# @name forgotPasswordRequest
+POST {{baseUrl}}/auth/forgot-password
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "user@test.com"
+}
+
+### Reset password with token
+POST {{baseUrl}}/auth/reset-password
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "user@test.com",
+  "token": "reset-token-from-email",
+  "newPassword": "NewPassword123!"
+}
+
+### ============================================
+### User Registration (Admin only)
+### ============================================
+
+### Register a new user (requires authentication)
+POST {{baseUrl}}/auth/register
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "email": "newuser@test.com",
+  "password": "Password123!",
+  "firstName": "John",
+  "lastName": "Doe",
+  "title": "Agent",
+  "phoneNumber": "555-123-4567"
+}
+
+### Register user with minimal fields
+POST {{baseUrl}}/auth/register
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "email": "minimal@test.com",
+  "password": "Password123!",
+  "firstName": "Jane",
+  "lastName": "Smith"
+}
+
+### Register user (no auth - should fail with 401)
+POST {{baseUrl}}/auth/register
+Content-Type: {{contentType}}
+
+{
+  "email": "unauthorized@test.com",
+  "password": "Password123!",
+  "firstName": "No",
+  "lastName": "Auth"
+}
+
+### ============================================
+### Test Scenarios
+### ============================================
+
+### Invalid credentials test
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "wrongpassword"
+}
+
+### Missing tenant test
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Invalid email format test
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "invalid-email",
+  "password": "Admin123!"
+}
+
+### Empty password test
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": ""
+}
+
+### Expired token test (use old token)
+GET {{baseUrl}}/auth/me
+Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.expired

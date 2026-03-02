@@ -1,0 +1,135 @@
+@baseUrl = https://localhost:7001/api/v1
+@token = {{auth.token}}
+@tenantId = 00000000-0000-0000-0000-000000000001
+@documentId = {{uploadDocument.response.body.id}}
+@templateId = {{createTemplate.response.body.id}}
+
+### ── Documents ──────────────────────────────────────────────────────
+
+### List all documents
+GET {{baseUrl}}/documents?Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### List documents filtered by category
+GET {{baseUrl}}/documents?Category=Policy&Page=1&PageSize=10
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### List documents filtered by entity type
+GET {{baseUrl}}/documents?EntityType=Claim&Page=1&PageSize=10
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Search documents by filename
+GET {{baseUrl}}/documents?SearchTerm=policy&Page=1&PageSize=10
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Upload a document
+# @name uploadDocument
+POST {{baseUrl}}/documents/upload
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: multipart/form-data; boundary=----FormBoundary
+
+------FormBoundary
+Content-Disposition: form-data; name="file"; filename="sample.pdf"
+Content-Type: application/pdf
+
+< ./sample.pdf
+------FormBoundary
+Content-Disposition: form-data; name="entityType"
+
+General
+------FormBoundary
+Content-Disposition: form-data; name="category"
+
+Policy
+------FormBoundary
+Content-Disposition: form-data; name="description"
+
+Sample uploaded policy document
+------FormBoundary--
+
+### Get document by ID
+GET {{baseUrl}}/documents/{{documentId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Download document (returns redirect to SAS URL)
+GET {{baseUrl}}/documents/{{documentId}}/download
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Archive (soft-delete) a document
+DELETE {{baseUrl}}/documents/{{documentId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### ── Document Templates ──────────────────────────────────────────────
+
+### List all templates
+GET {{baseUrl}}/documents/templates?Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### List active COI templates
+GET {{baseUrl}}/documents/templates?TemplateType=CertificateOfInsurance&IsActive=true
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Create a template
+# @name createTemplate
+POST {{baseUrl}}/documents/templates
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "name": "Test COI Template",
+  "description": "A simple COI template for testing",
+  "templateType": "CertificateOfInsurance",
+  "content": "<h1>Certificate of Insurance</h1><p>Policy: {{PolicyNumber}}</p><p>Client: {{ClientName}}</p><p>Carrier: {{CarrierName}}</p><p>Effective: {{EffectiveDate}} - {{ExpirationDate}}</p><p>Broker: {{BrokerName}}</p>"
+}
+
+### Get template by ID
+GET {{baseUrl}}/documents/templates/{{templateId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Update a template
+PUT {{baseUrl}}/documents/templates/{{templateId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "name": "Test COI Template (Updated)",
+  "description": "Updated description",
+  "content": "<h1>Certificate of Insurance</h1><p>Policy: {{PolicyNumber}}</p><p>Client: {{ClientName}}</p><p>Carrier: {{CarrierName}}</p><p>Issued: {{IssuedDate}}</p>"
+}
+
+### Activate a template
+POST {{baseUrl}}/documents/templates/{{templateId}}/activate
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Deactivate a template
+POST {{baseUrl}}/documents/templates/{{templateId}}/deactivate
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### ── COI Generation ───────────────────────────────────────────────────
+
+### Generate a Certificate of Insurance PDF
+# Replace policyId and templateId with real GUIDs from your database
+POST {{baseUrl}}/documents/generate-coi
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "templateId": "{{templateId}}",
+  "policyId": "00000000-0000-0000-0000-000000000000"
+}

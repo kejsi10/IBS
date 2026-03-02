@@ -1,0 +1,266 @@
+### Carrier API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+
+### Variables (update after creating carriers)
+@carrierId = {{createCarrierResponse.response.body}}
+@productId =
+@appetiteId =
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### ============================================
+### Carrier CRUD Operations
+### ============================================
+
+### Get all carriers
+GET {{baseUrl}}/carriers
+Authorization: {{authToken}}
+
+### Search carriers by name
+GET {{baseUrl}}/carriers?search=travelers
+Authorization: {{authToken}}
+
+### Get carriers by status (Active, Suspended, Inactive)
+GET {{baseUrl}}/carriers?status=Active
+Authorization: {{authToken}}
+
+### Create a new carrier
+# @name createCarrierResponse
+POST {{baseUrl}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Travelers Insurance",
+  "code": "TRAV",
+  "legalName": "The Travelers Indemnity Company",
+  "amBestRating": "A++",
+  "naicCode": "25658",
+  "websiteUrl": "https://www.travelers.com",
+  "notes": "Major P&C carrier with strong commercial lines presence"
+}
+
+### Get carrier by ID
+GET {{baseUrl}}/carriers/{{carrierId}}
+Authorization: {{authToken}}
+
+### Update carrier
+PUT {{baseUrl}}/carriers/{{carrierId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Travelers Insurance Company",
+  "legalName": "The Travelers Indemnity Company",
+  "amBestRating": "A++",
+  "naicCode": "25658",
+  "websiteUrl": "https://www.travelers.com",
+  "apiEndpoint": "https://api.travelers.com/v1",
+  "notes": "Updated notes - Major P&C carrier"
+}
+
+### Deactivate carrier
+POST {{baseUrl}}/carriers/{{carrierId}}/deactivate
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Carrier no longer accepting new business"
+}
+
+### ============================================
+### Product Operations
+### ============================================
+
+### Add a product to carrier (General Liability)
+# @name addProductResponse
+POST {{baseUrl}}/carriers/{{carrierId}}/products
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "General Liability",
+  "code": "GL01",
+  "lineOfBusiness": "GeneralLiability",
+  "description": "Commercial general liability coverage",
+  "minimumPremium": 500.00,
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-12-31"
+}
+
+### Add Commercial Property product
+POST {{baseUrl}}/carriers/{{carrierId}}/products
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Commercial Property",
+  "code": "CP01",
+  "lineOfBusiness": "CommercialProperty",
+  "description": "Commercial property coverage for buildings and contents",
+  "minimumPremium": 750.00
+}
+
+### Add Workers Compensation product
+POST {{baseUrl}}/carriers/{{carrierId}}/products
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Workers Compensation",
+  "code": "WC01",
+  "lineOfBusiness": "WorkersCompensation",
+  "description": "Workers compensation coverage",
+  "minimumPremium": 1000.00
+}
+
+### Add Business Owners Policy
+POST {{baseUrl}}/carriers/{{carrierId}}/products
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Business Owners Policy",
+  "code": "BOP01",
+  "lineOfBusiness": "BusinessOwnersPolicy",
+  "description": "Combined property and liability for small businesses",
+  "minimumPremium": 600.00
+}
+
+### ============================================
+### Appetite Operations
+### ============================================
+
+### Add appetite for General Liability (all states)
+# @name addAppetiteResponse
+POST {{baseUrl}}/carriers/{{carrierId}}/appetites
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "lineOfBusiness": "GeneralLiability",
+  "states": "ALL",
+  "minYearsInBusiness": 2,
+  "minAnnualRevenue": 100000,
+  "maxAnnualRevenue": 50000000,
+  "minEmployees": 1,
+  "maxEmployees": 500,
+  "acceptedIndustries": "5411,5412,5413,5414,5415",
+  "excludedIndustries": "4512,7211",
+  "notes": "Focus on professional services and retail"
+}
+
+### Add appetite for Commercial Property (specific states)
+POST {{baseUrl}}/carriers/{{carrierId}}/appetites
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "lineOfBusiness": "CommercialProperty",
+  "states": "CA,TX,NY,FL,IL,PA,OH,GA,NC,MI",
+  "minYearsInBusiness": 3,
+  "minAnnualRevenue": 500000,
+  "maxAnnualRevenue": 100000000,
+  "notes": "Prefer non-coastal properties in hurricane zones"
+}
+
+### Add appetite for Workers Compensation
+POST {{baseUrl}}/carriers/{{carrierId}}/appetites
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "lineOfBusiness": "WorkersCompensation",
+  "states": "CA,TX,NY,FL,IL",
+  "minEmployees": 5,
+  "maxEmployees": 250,
+  "excludedIndustries": "2382,2389",
+  "notes": "Excludes high-hazard construction"
+}
+
+### ============================================
+### Create Additional Carriers
+### ============================================
+
+### Create Hartford carrier
+POST {{baseUrl}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "The Hartford",
+  "code": "HART",
+  "legalName": "Hartford Fire Insurance Company",
+  "amBestRating": "A+",
+  "naicCode": "19682",
+  "websiteUrl": "https://www.thehartford.com",
+  "notes": "Strong small business focus, excellent workers comp programs"
+}
+
+### Create CNA carrier
+POST {{baseUrl}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "CNA Insurance",
+  "code": "CNA",
+  "legalName": "CNA Financial Corporation",
+  "amBestRating": "A",
+  "naicCode": "20443",
+  "websiteUrl": "https://www.cna.com",
+  "notes": "Specialty lines focus with strong professional liability"
+}
+
+### Create Liberty Mutual carrier
+POST {{baseUrl}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Liberty Mutual",
+  "code": "LIBERTY",
+  "legalName": "Liberty Mutual Insurance Company",
+  "amBestRating": "A",
+  "naicCode": "23043",
+  "websiteUrl": "https://www.libertymutual.com",
+  "notes": "Full-service carrier with personal and commercial lines"
+}
+
+### ============================================
+### Query Examples
+### ============================================
+
+### Get all active carriers
+GET {{baseUrl}}/carriers?status=Active
+Authorization: {{authToken}}
+
+### Get all inactive carriers
+GET {{baseUrl}}/carriers?status=Inactive
+Authorization: {{authToken}}
+
+### Search for carriers containing "insurance"
+GET {{baseUrl}}/carriers?search=insurance
+Authorization: {{authToken}}
+
+### Search for carriers by code
+GET {{baseUrl}}/carriers?search=TRAV
+Authorization: {{authToken}}

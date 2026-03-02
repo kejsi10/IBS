@@ -1,0 +1,166 @@
+name: Deploy — Dev
+
+on:
+  push:
+    branches: [main]
+
+# Prevent concurrent deploys; cancel in-progress if a new push arrives
+concurrency:
+  group: deploy-dev
+  cancel-in-progress: true
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository_owner }}/ibs-api
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # 1. Build & push Docker image to GitHub Container Registry
+  # ---------------------------------------------------------------------------
+  build-push:
+    name: Build & Push Docker Image
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    outputs:
+      image_tag: ${{ steps.meta.outputs.version }}
+      image_full: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ steps.meta.outputs.version }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha,format=short
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: docker/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # ---------------------------------------------------------------------------
+  # 2. Run EF Core migrations against Azure SQL
+  # ---------------------------------------------------------------------------
+  migrate:
+    name: Run EF Migrations
+    runs-on: ubuntu-latest
+    needs: [build-push]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup .NET 8
+        uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '8.0.x'
+
+      - name: Install dotnet-ef tool
+        run: dotnet tool install --global dotnet-ef
+
+      - name: Run migrations
+        run: >
+          dotnet ef database update
+          --project src/IBS.Infrastructure/IBS.Infrastructure.csproj
+          --startup-project src/IBS.Api/IBS.Api.csproj
+          --connection "${{ secrets.SQL_CONNECTION_STRING }}"
+        env:
+          ASPNETCORE_ENVIRONMENT: Production
+
+  # ---------------------------------------------------------------------------
+  # 3. Deploy updated image to Azure Container App
+  # ---------------------------------------------------------------------------
+  deploy-api:
+    name: Deploy API to Container Apps
+    runs-on: ubuntu-latest
+    needs: [build-push, migrate]
+
+    steps:
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Update Container App image
+        run: >
+          az containerapp update
+          --name ibs-api-dev
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}
+          --image ${{ needs.build-push.outputs.image_full }}
+
+  # ---------------------------------------------------------------------------
+  # 4. Build frontend and deploy to Azure Static Web Apps
+  # ---------------------------------------------------------------------------
+  deploy-frontend:
+    name: Deploy Frontend to Static Web Apps
+    runs-on: ubuntu-latest
+    needs: [deploy-api]
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure Login
+        uses: azure/login@v2
+        with:
+          creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get Container App URL
+        id: get-api-url
+        run: |
+          FQDN=$(az containerapp show \
+            --name ibs-api-dev \
+            --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }} \
+            --query "properties.configuration.ingress.fqdn" \
+            --output tsv)
+          echo "api_url=https://$FQDN" >> $GITHUB_OUTPUT
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: src/IBS.Web/package-lock.json
+
+      - name: Install dependencies
+        working-directory: src/IBS.Web
+        run: npm ci
+
+      - name: Build frontend
+        working-directory: src/IBS.Web
+        run: npm run build
+        env:
+          VITE_API_BASE_URL: ${{ steps.get-api-url.outputs.api_url }}
+
+      - name: Deploy to Static Web Apps
+        uses: Azure/static-web-apps-deploy@v1
+        with:
+          azure_static_web_apps_api_token: ${{ secrets.AZURE_STATIC_WEB_APPS_API_TOKEN }}
+          repo_token: ${{ secrets.GITHUB_TOKEN }}
+          action: upload
+          app_location: src/IBS.Web/dist
+          skip_app_build: true

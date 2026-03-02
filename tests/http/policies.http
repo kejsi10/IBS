@@ -1,0 +1,737 @@
+### Policies API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### Variables (update after creating resources)
+@clientId = 00000000-0000-0000-0000-000000000002
+@carrierId = 00000000-0000-0000-0000-000000000003
+@policyId =
+@coverageId =
+@endorsementId =
+
+### ============================================
+### Policy CRUD Operations
+### ============================================
+
+### Create a Personal Auto policy
+# @name createAutoPolicy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "PersonalAuto",
+  "policyType": "Personal Auto Insurance",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual",
+  "notes": "New customer auto policy"
+}
+
+### Store policy ID
+@policyId = {{createAutoPolicy.response.body.id}}
+
+### Create a Homeowners policy
+# @name createHomePolicy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "Homeowners",
+  "policyType": "Homeowners HO-3",
+  "effectiveDate": "2024-02-15",
+  "expirationDate": "2025-02-15",
+  "billingType": "AgencyBill",
+  "paymentPlan": "Monthly",
+  "notes": "Primary residence coverage"
+}
+
+### Create a Commercial General Liability policy
+# @name createGLPolicy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "GeneralLiability",
+  "policyType": "Commercial General Liability",
+  "effectiveDate": "2024-03-01",
+  "expirationDate": "2025-03-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Quarterly"
+}
+
+### Create a Workers Compensation policy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "WorkersCompensation",
+  "policyType": "Workers Compensation",
+  "effectiveDate": "2024-04-01",
+  "expirationDate": "2025-04-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual"
+}
+
+### Create a Commercial Auto policy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "CommercialAuto",
+  "policyType": "Business Auto",
+  "effectiveDate": "2024-05-01",
+  "expirationDate": "2025-05-01",
+  "billingType": "AgencyBill",
+  "paymentPlan": "SemiAnnual"
+}
+
+### Get policy by ID
+GET {{baseUrl}}/policies/{{policyId}}
+Authorization: {{authToken}}
+
+### ============================================
+### Policy List & Filtering
+### ============================================
+
+### Get all policies (paginated)
+GET {{baseUrl}}/policies?page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get policies with sorting
+GET {{baseUrl}}/policies?page=1&pageSize=10&sortBy=effectiveDate&sortDirection=desc
+Authorization: {{authToken}}
+
+### Search policies
+GET {{baseUrl}}/policies?search=auto
+Authorization: {{authToken}}
+
+### Filter by status (Draft)
+GET {{baseUrl}}/policies?status=Draft
+Authorization: {{authToken}}
+
+### Filter by status (Active)
+GET {{baseUrl}}/policies?status=Active
+Authorization: {{authToken}}
+
+### Filter by status (Cancelled)
+GET {{baseUrl}}/policies?status=Cancelled
+Authorization: {{authToken}}
+
+### Filter by line of business
+GET {{baseUrl}}/policies?lineOfBusiness=PersonalAuto
+Authorization: {{authToken}}
+
+### Filter by line of business (Commercial)
+GET {{baseUrl}}/policies?lineOfBusiness=GeneralLiability
+Authorization: {{authToken}}
+
+### Filter by client
+GET {{baseUrl}}/policies?clientId={{clientId}}
+Authorization: {{authToken}}
+
+### Filter by carrier
+GET {{baseUrl}}/policies?carrierId={{carrierId}}
+Authorization: {{authToken}}
+
+### Filter by effective date range
+GET {{baseUrl}}/policies?effectiveDateFrom=2024-01-01&effectiveDateTo=2024-12-31
+Authorization: {{authToken}}
+
+### Filter by expiration date range
+GET {{baseUrl}}/policies?expirationDateFrom=2024-06-01&expirationDateTo=2024-12-31
+Authorization: {{authToken}}
+
+### Combined filters
+GET {{baseUrl}}/policies?status=Draft&lineOfBusiness=PersonalAuto&page=1&pageSize=25&sortBy=createdAt&sortDirection=desc
+Authorization: {{authToken}}
+
+### ============================================
+### Coverage Operations
+### ============================================
+
+### Add Bodily Injury coverage
+# @name addBICoverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "BI",
+  "name": "Bodily Injury Liability",
+  "premiumAmount": 450.00,
+  "description": "Covers injuries you cause to others in an accident",
+  "limitAmount": 100000.00,
+  "deductibleAmount": 0,
+  "isOptional": false
+}
+
+### Store coverage ID
+@coverageId = {{addBICoverage.response.body.id}}
+
+### Add Property Damage coverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "PD",
+  "name": "Property Damage Liability",
+  "premiumAmount": 350.00,
+  "description": "Covers damage you cause to others property",
+  "limitAmount": 50000.00,
+  "deductibleAmount": 500.00,
+  "isOptional": false
+}
+
+### Add Collision coverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "COLL",
+  "name": "Collision Coverage",
+  "premiumAmount": 600.00,
+  "description": "Covers damage to your vehicle from collisions",
+  "limitAmount": 35000.00,
+  "deductibleAmount": 1000.00,
+  "isOptional": true
+}
+
+### Add Comprehensive coverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "COMP",
+  "name": "Comprehensive Coverage",
+  "premiumAmount": 250.00,
+  "description": "Covers non-collision damage (theft, weather, etc.)",
+  "limitAmount": 35000.00,
+  "deductibleAmount": 500.00,
+  "isOptional": true
+}
+
+### Add Medical Payments coverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "MEDPAY",
+  "name": "Medical Payments",
+  "premiumAmount": 75.00,
+  "description": "Covers medical expenses for you and passengers",
+  "limitAmount": 5000.00,
+  "deductibleAmount": 0,
+  "isOptional": true
+}
+
+### Add Uninsured Motorist coverage
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "UM",
+  "name": "Uninsured Motorist Coverage",
+  "premiumAmount": 125.00,
+  "description": "Covers you when hit by uninsured driver",
+  "limitAmount": 100000.00,
+  "deductibleAmount": 0,
+  "isOptional": false
+}
+
+### ============================================
+### Policy Lifecycle Operations
+### ============================================
+
+### Bind policy (requires at least one coverage)
+POST {{baseUrl}}/policies/{{policyId}}/bind
+Authorization: {{authToken}}
+
+### Activate (issue) bound policy
+POST {{baseUrl}}/policies/{{policyId}}/activate
+Authorization: {{authToken}}
+
+### ============================================
+### Policy Renewal Operations
+### ============================================
+
+### Create renewal policy from active policy
+# @name renewPolicy
+POST {{baseUrl}}/policies/{{policyId}}/renew
+Authorization: {{authToken}}
+
+### Store renewal policy ID
+@renewalPolicyId = {{renewPolicy.response.body.id}}
+
+### ============================================
+### Coverage Update/Remove Operations
+### ============================================
+
+### Update a coverage (modify limits, premium, etc.)
+PUT {{baseUrl}}/policies/{{policyId}}/coverages/{{coverageId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Bodily Injury Liability - Updated",
+  "premiumAmount": 525.00,
+  "description": "Updated coverage with higher limits",
+  "limitAmount": 250000.00,
+  "perOccurrenceLimit": 100000.00,
+  "aggregateLimit": 300000.00,
+  "deductibleAmount": 0
+}
+
+### Remove (deactivate) a coverage
+DELETE {{baseUrl}}/policies/{{policyId}}/coverages/{{coverageId}}
+Authorization: {{authToken}}
+
+### ============================================
+### Endorsement Operations (after binding)
+### ============================================
+
+### Add driver endorsement (positive premium)
+# @name addDriverEndorsement
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2024-04-01",
+  "type": "Additional Driver",
+  "description": "Add new driver: John Smith Jr., age 19",
+  "premiumChange": 150.00,
+  "notes": "Young driver surcharge applied"
+}
+
+### Store endorsement ID
+@endorsementId = {{addDriverEndorsement.response.body.id}}
+
+### Add vehicle endorsement (positive premium)
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2024-05-15",
+  "type": "Add Vehicle",
+  "description": "Add 2024 Toyota Camry, VIN: ABC123XYZ789",
+  "premiumChange": 275.00,
+  "notes": "New vehicle addition"
+}
+
+### Remove coverage endorsement (negative premium)
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2024-06-01",
+  "type": "Remove Coverage",
+  "description": "Remove comprehensive coverage from 2018 Honda",
+  "premiumChange": -85.00,
+  "notes": "Customer requested removal of optional coverage"
+}
+
+### Address change endorsement (no premium change)
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2024-07-01",
+  "type": "Address Change",
+  "description": "Change garaging address to: 456 New Street, City, ST 12345",
+  "premiumChange": 0.00,
+  "notes": "Customer moved within same territory"
+}
+
+### Increase limits endorsement
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2024-08-01",
+  "type": "Limit Increase",
+  "description": "Increase BI limits from 100/300 to 250/500",
+  "premiumChange": 125.00,
+  "notes": "Customer requested higher liability limits"
+}
+
+### ============================================
+### Endorsement Workflow Operations
+### ============================================
+
+### Approve a pending endorsement
+POST {{baseUrl}}/policies/{{policyId}}/endorsements/{{endorsementId}}/approve
+Authorization: {{authToken}}
+
+### Issue an approved endorsement (applies premium changes)
+POST {{baseUrl}}/policies/{{policyId}}/endorsements/{{endorsementId}}/issue
+Authorization: {{authToken}}
+
+### Reject a pending endorsement
+POST {{baseUrl}}/policies/{{policyId}}/endorsements/{{endorsementId}}/reject
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "reason": "Endorsement request does not meet underwriting guidelines"
+}
+
+### ============================================
+### Policy Queries - Expiring & Renewal Due
+### ============================================
+
+### Get policies expiring within date range
+GET {{baseUrl}}/policies/expiring?startDate=2024-12-01&endDate=2025-03-31&page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get policies due for renewal (default 60 days)
+GET {{baseUrl}}/policies/due-for-renewal?page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get policies due for renewal (custom days)
+GET {{baseUrl}}/policies/due-for-renewal?daysUntilExpiration=90&page=1&pageSize=20
+Authorization: {{authToken}}
+
+### ============================================
+### Client Policies Query
+### ============================================
+
+### Get all policies for a specific client
+GET {{baseUrl}}/clients/{{clientId}}/policies?page=1&pageSize=20
+Authorization: {{authToken}}
+
+### Get client policies with sorting
+GET {{baseUrl}}/clients/{{clientId}}/policies?page=1&pageSize=20&sortBy=effectiveDate&sortDirection=desc
+Authorization: {{authToken}}
+
+### ============================================
+### Policy Cancellation
+### ============================================
+
+### Cancel policy - Insured Request
+POST {{baseUrl}}/policies/{{policyId}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2024-06-15",
+  "reason": "Customer sold vehicle and no longer needs coverage",
+  "cancellationType": "InsuredRequest"
+}
+
+### Cancel policy - Non-Payment (for another policy)
+POST {{baseUrl}}/policies/{{createHomePolicy.response.body.id}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2024-05-01",
+  "reason": "Non-payment of premium after notice period",
+  "cancellationType": "NonPayment"
+}
+
+### Cancel policy - Underwriting (for another policy)
+POST {{baseUrl}}/policies/{{createGLPolicy.response.body.id}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2024-04-15",
+  "reason": "Material misrepresentation on application",
+  "cancellationType": "Underwriting"
+}
+
+### Flat cancel (cancellation date = effective date)
+POST {{baseUrl}}/policies/{{policyId}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2024-01-01",
+  "reason": "Policy never went into effect - customer found other coverage",
+  "cancellationType": "InsuredRequest"
+}
+
+### ============================================
+### Validation Test Cases
+### ============================================
+
+### Missing required field (clientId)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "PersonalAuto",
+  "policyType": "Personal Auto",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01"
+}
+
+### Missing required field (policyType)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "PersonalAuto",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01"
+}
+
+### Invalid date range (expiration before effective)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "PersonalAuto",
+  "policyType": "Personal Auto",
+  "effectiveDate": "2025-01-01",
+  "expirationDate": "2024-01-01"
+}
+
+### Invalid coverage - negative premium
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "TEST",
+  "name": "Test Coverage",
+  "premiumAmount": -100.00,
+  "isOptional": false
+}
+
+### Missing coverage code
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Missing Code Coverage",
+  "premiumAmount": 100.00,
+  "isOptional": false
+}
+
+### Duplicate coverage code
+POST {{baseUrl}}/policies/{{policyId}}/coverages
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "code": "BI",
+  "name": "Duplicate Bodily Injury",
+  "premiumAmount": 500.00,
+  "isOptional": false
+}
+
+### Endorsement with date outside policy period
+POST {{baseUrl}}/policies/{{policyId}}/endorsements
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "effectiveDate": "2025-06-01",
+  "type": "Invalid Date",
+  "description": "Date is after policy expiration",
+  "premiumChange": 50.00
+}
+
+### Cancel with date before effective
+POST {{baseUrl}}/policies/{{policyId}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2023-12-01",
+  "reason": "Invalid cancellation date",
+  "cancellationType": "InsuredRequest"
+}
+
+### Cancel without reason
+POST {{baseUrl}}/policies/{{policyId}}/cancel
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "cancellationDate": "2024-06-01",
+  "reason": "",
+  "cancellationType": "InsuredRequest"
+}
+
+### Bind policy without coverages
+# First create a new policy
+# @name emptyPolicy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "PersonalAuto",
+  "policyType": "Empty Policy Test",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01"
+}
+
+### Try to bind empty policy (should fail)
+POST {{baseUrl}}/policies/{{emptyPolicy.response.body.id}}/bind
+Authorization: {{authToken}}
+
+### ============================================
+### Common Insurance Line Scenarios
+### ============================================
+
+### Commercial Property policy
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "CommercialProperty",
+  "policyType": "Building and Personal Property",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "AgencyBill",
+  "paymentPlan": "Quarterly",
+  "notes": "Office building coverage"
+}
+
+### Professional Liability (E&O)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "ProfessionalLiability",
+  "policyType": "Errors and Omissions",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual",
+  "notes": "E&O coverage for consulting firm"
+}
+
+### Cyber Liability
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "CyberLiability",
+  "policyType": "Cyber Risk Insurance",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual",
+  "notes": "First party and third party cyber coverage"
+}
+
+### Business Owners Policy (BOP)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "BusinessOwners",
+  "policyType": "Business Owners Policy",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "AgencyBill",
+  "paymentPlan": "Monthly",
+  "notes": "Combined GL and property for small business"
+}
+
+### Umbrella/Excess Liability
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "Umbrella",
+  "policyType": "Commercial Umbrella",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual",
+  "notes": "Excess liability over GL, auto, and employers liability"
+}
+
+### Directors & Officers (D&O)
+POST {{baseUrl}}/policies
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}",
+  "lineOfBusiness": "DirectorsOfficers",
+  "policyType": "D&O Liability",
+  "effectiveDate": "2024-01-01",
+  "expirationDate": "2025-01-01",
+  "billingType": "DirectBill",
+  "paymentPlan": "Annual",
+  "notes": "Side A, B, and C coverage"
+}

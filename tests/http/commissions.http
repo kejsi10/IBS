@@ -1,0 +1,167 @@
+@baseUrl = https://localhost:7001/api/v1
+@token = {{auth.token}}
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ── Schedules ──────────────────────────────────────────────────────
+
+### Get all schedules
+GET {{baseUrl}}/commissions/schedules?Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get schedules filtered by carrier
+GET {{baseUrl}}/commissions/schedules?CarrierId=00000000-0000-0000-0000-000000000010&IsActive=true
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get schedule by ID
+GET {{baseUrl}}/commissions/schedules/{{scheduleId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Create schedule
+POST {{baseUrl}}/commissions/schedules
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "carrierId": "00000000-0000-0000-0000-000000000010",
+  "carrierName": "Acme Insurance Co.",
+  "lineOfBusiness": "Commercial Property",
+  "newBusinessRate": 15.0,
+  "renewalRate": 12.5,
+  "effectiveFrom": "2026-01-01",
+  "effectiveTo": "2026-12-31"
+}
+
+### Update schedule
+PUT {{baseUrl}}/commissions/schedules/{{scheduleId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "carrierName": "Acme Insurance Co.",
+  "lineOfBusiness": "Commercial Property",
+  "newBusinessRate": 16.0,
+  "renewalRate": 13.0,
+  "effectiveFrom": "2026-01-01",
+  "effectiveTo": "2026-12-31"
+}
+
+### Deactivate schedule
+POST {{baseUrl}}/commissions/schedules/{{scheduleId}}/deactivate
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### ── Statements ─────────────────────────────────────────────────────
+
+### Get all statements
+GET {{baseUrl}}/commissions/statements?Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get statements filtered by status
+GET {{baseUrl}}/commissions/statements?Status=Received&PeriodYear=2026
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get statement by ID
+GET {{baseUrl}}/commissions/statements/{{statementId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Create statement
+POST {{baseUrl}}/commissions/statements
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "carrierId": "00000000-0000-0000-0000-000000000010",
+  "carrierName": "Acme Insurance Co.",
+  "statementNumber": "STMT-2026-001",
+  "periodMonth": 1,
+  "periodYear": 2026,
+  "statementDate": "2026-01-31",
+  "totalPremium": 100000.00,
+  "totalPremiumCurrency": "USD",
+  "totalCommission": 15000.00,
+  "totalCommissionCurrency": "USD"
+}
+
+### Add line item to statement
+POST {{baseUrl}}/commissions/statements/{{statementId}}/line-items
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "policyNumber": "POL-2026-001",
+  "insuredName": "John's Bakery LLC",
+  "lineOfBusiness": "Commercial Property",
+  "effectiveDate": "2026-01-15",
+  "transactionType": "NewBusiness",
+  "grossPremium": 10000.00,
+  "grossPremiumCurrency": "USD",
+  "commissionRate": 15.0,
+  "commissionAmount": 1500.00,
+  "commissionAmountCurrency": "USD"
+}
+
+### Reconcile line item
+PUT {{baseUrl}}/commissions/statements/{{statementId}}/line-items/{{lineItemId}}/reconcile
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Dispute line item
+POST {{baseUrl}}/commissions/statements/{{statementId}}/line-items/{{lineItemId}}/dispute
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "reason": "Commission rate does not match our schedule. Expected 15% but statement shows 12%."
+}
+
+### Add producer split
+POST {{baseUrl}}/commissions/statements/{{statementId}}/line-items/{{lineItemId}}/splits
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "producerName": "Jane Agent",
+  "producerId": "00000000-0000-0000-0000-000000000002",
+  "splitPercentage": 60.0,
+  "splitAmount": 900.00,
+  "splitAmountCurrency": "USD"
+}
+
+### Update statement status (start reconciling)
+PUT {{baseUrl}}/commissions/statements/{{statementId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Reconciling"
+}
+
+### ── Statistics & Reports ───────────────────────────────────────────
+
+### Get commission statistics
+GET {{baseUrl}}/commissions/statistics
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get commission summary report
+GET {{baseUrl}}/commissions/reports/summary?periodYear=2026
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get producer report
+GET {{baseUrl}}/commissions/reports/producer?periodYear=2026
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}

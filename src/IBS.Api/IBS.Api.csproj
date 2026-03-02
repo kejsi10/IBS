@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <NoWarn>$(NoWarn);1591</NoWarn>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MediatR" Version="12.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Authentication.JwtBearer" Version="8.0.8" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.2">
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+      <PrivateAssets>all</PrivateAssets>
+    </PackageReference>
+    <PackageReference Include="Swashbuckle.AspNetCore" Version="6.6.2" />
+    <PackageReference Include="Serilog.AspNetCore" Version="8.0.1" />
+    <PackageReference Include="Serilog.Sinks.Console" Version="5.0.1" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlocks\IBS.BuildingBlocks.Application\IBS.BuildingBlocks.Application.csproj" />
+    <ProjectReference Include="..\BuildingBlocks\IBS.BuildingBlocks.Infrastructure\IBS.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Identity\IBS.Identity.Domain\IBS.Identity.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Identity\IBS.Identity.Application\IBS.Identity.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Identity\IBS.Identity.Infrastructure\IBS.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Tenants\IBS.Tenants.Domain\IBS.Tenants.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Clients\IBS.Clients.Domain\IBS.Clients.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Clients\IBS.Clients.Application\IBS.Clients.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Clients\IBS.Clients.Infrastructure\IBS.Clients.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Carriers\IBS.Carriers.Application\IBS.Carriers.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Carriers\IBS.Carriers.Infrastructure\IBS.Carriers.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Policies\IBS.Policies.Domain\IBS.Policies.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Policies\IBS.Policies.Application\IBS.Policies.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Policies\IBS.Policies.Infrastructure\IBS.Policies.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Claims\IBS.Claims.Domain\IBS.Claims.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Claims\IBS.Claims.Application\IBS.Claims.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Claims\IBS.Claims.Infrastructure\IBS.Claims.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Commissions\IBS.Commissions.Domain\IBS.Commissions.Domain.csproj" />
+    <ProjectReference Include="..\Contexts\Commissions\IBS.Commissions.Application\IBS.Commissions.Application.csproj" />
+    <ProjectReference Include="..\Contexts\Commissions\IBS.Commissions.Infrastructure\IBS.Commissions.Infrastructure.csproj" />
+    <ProjectReference Include="..\IBS.Infrastructure\IBS.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

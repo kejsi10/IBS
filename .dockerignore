@@ -1,0 +1,15 @@
+.git
+.github
+.vscode
+.claude
+docs
+tests
+scripts
+src/IBS.Web
+**/*.md
+**/*.http
+**/node_modules
+**/.env
+**/.env.*
+**/bin
+**/obj

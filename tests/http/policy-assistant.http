@@ -1,0 +1,152 @@
+### Policy Assistant API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### Variables (update after creating resources)
+@conversationId =
+@clientId = 00000000-0000-0000-0000-000000000002
+@carrierId = 00000000-0000-0000-0000-000000000003
+
+### ============================================
+### Conversations
+### ============================================
+
+### Create a Guided conversation
+# @name createConversation
+POST {{baseUrl}}/policy-assistant/conversations
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "mode": "Guided",
+  "lineOfBusiness": "PersonalAuto"
+}
+
+### Create a Freeform conversation
+POST {{baseUrl}}/policy-assistant/conversations
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "mode": "Freeform"
+}
+
+### List conversations
+GET {{baseUrl}}/policy-assistant/conversations
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Get a single conversation
+GET {{baseUrl}}/policy-assistant/conversations/{{conversationId}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### ============================================
+### Messages (core RAG pipeline)
+### ============================================
+
+### Send a message (Guided - start)
+POST {{baseUrl}}/policy-assistant/conversations/{{conversationId}}/messages
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "content": "I need to create a personal auto insurance policy."
+}
+
+### Send a message with policy details (Freeform)
+POST {{baseUrl}}/policy-assistant/conversations/{{conversationId}}/messages
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "content": "I need a personal auto policy for John Smith with a 2022 Honda Civic. Bodily injury $100k/$300k, property damage $100k, comprehensive and collision with $500 deductible. Annual premium around $1,200. Effective January 1, 2026 for 12 months. Direct bill, annual payment."
+}
+
+### Send a message - provide carrier info
+POST {{baseUrl}}/policy-assistant/conversations/{{conversationId}}/messages
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "content": "The carrier is State Farm and the client is Sarah Johnson."
+}
+
+### ============================================
+### Create Policy from Conversation
+### ============================================
+
+### Create policy from conversation extracted data
+POST {{baseUrl}}/policy-assistant/conversations/{{conversationId}}/create-policy
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "clientId": "{{clientId}}",
+  "carrierId": "{{carrierId}}"
+}
+
+### ============================================
+### Abandon Conversation
+### ============================================
+
+### Abandon a conversation
+DELETE {{baseUrl}}/policy-assistant/conversations/{{conversationId}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### ============================================
+### Reference Documents (Admin)
+### ============================================
+
+### List reference documents
+GET {{baseUrl}}/policy-assistant/reference-documents
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### List reference documents filtered by category
+GET {{baseUrl}}/policy-assistant/reference-documents?category=Regulation
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Import a reference document
+POST {{baseUrl}}/policy-assistant/reference-documents
+Content-Type: {{contentType}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "title": "California Personal Auto Minimum Requirements",
+  "category": "Regulation",
+  "lineOfBusiness": "PersonalAuto",
+  "state": "CA",
+  "content": "California requires minimum liability coverage of $15,000 per person / $30,000 per accident for bodily injury, and $5,000 for property damage (15/30/5). Uninsured motorist coverage must be offered. Medical payments coverage is optional. The policy effective period must be at least 6 months.",
+  "source": "California DMV / CDI Regulations"
+}

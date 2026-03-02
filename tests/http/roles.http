@@ -1,0 +1,127 @@
+### Roles & Permissions API Endpoints
+### Base URL: https://localhost:7001/api/v1
+### Requires authentication - run auth.http login first
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### Login first to get auth token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### ============================================
+### Role Management
+### ============================================
+
+### Get all roles for tenant
+GET {{baseUrl}}/roles
+Authorization: {{authToken}}
+
+### Get role by ID
+GET {{baseUrl}}/roles/{{roleId}}
+Authorization: {{authToken}}
+
+### Create a new role
+# @name createRoleRequest
+POST {{baseUrl}}/roles
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Claims Adjuster",
+  "description": "Handles insurance claims processing"
+}
+
+@roleId = {{createRoleRequest.response.body}}
+
+### Create another role
+POST {{baseUrl}}/roles
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Underwriter",
+  "description": "Reviews and approves insurance applications"
+}
+
+### Update a role
+PUT {{baseUrl}}/roles/{{roleId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Senior Claims Adjuster",
+  "description": "Senior claims processing role"
+}
+
+### ============================================
+### Permission Management
+### ============================================
+
+### Get all permissions
+GET {{baseUrl}}/roles/permissions
+Authorization: {{authToken}}
+
+### Get permissions filtered by module
+GET {{baseUrl}}/roles/permissions?module=Clients
+Authorization: {{authToken}}
+
+### Grant a permission to a role
+POST {{baseUrl}}/roles/{{roleId}}/permissions
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "permissionId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Revoke a permission from a role
+DELETE {{baseUrl}}/roles/{{roleId}}/permissions/00000000-0000-0000-0000-000000000000
+Authorization: {{authToken}}
+
+### ============================================
+### Test Scenarios
+### ============================================
+
+### Create role with duplicate name (should fail with 409)
+POST {{baseUrl}}/roles
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Claims Adjuster",
+  "description": "Duplicate test"
+}
+
+### Create role without name (should fail with 400)
+POST {{baseUrl}}/roles
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "",
+  "description": "No name test"
+}
+
+### Create role without auth (should fail with 401)
+POST {{baseUrl}}/roles
+Content-Type: {{contentType}}
+
+{
+  "name": "Unauthorized Role"
+}
+
+### Get non-existent role (should fail with 404)
+GET {{baseUrl}}/roles/00000000-0000-0000-0000-000000000099
+Authorization: {{authToken}}

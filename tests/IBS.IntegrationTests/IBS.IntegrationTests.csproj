@@ -1,0 +1,40 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+
+    <IsPackable>false</IsPackable>
+    <IsTestProject>true</IsTestProject>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="coverlet.collector" Version="6.0.0" />
+    <PackageReference Include="FluentAssertions" Version="6.12.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Testing" Version="8.0.11" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.SqlServer" Version="8.0.11" />
+    <PackageReference Include="Testcontainers.MsSql" Version="4.3.0" />
+    <PackageReference Include="Microsoft.NET.Test.Sdk" Version="17.8.0" />
+    <PackageReference Include="NSubstitute" Version="5.1.0" />
+    <PackageReference Include="xunit" Version="2.5.3" />
+    <PackageReference Include="xunit.runner.visualstudio" Version="2.5.3" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\src\IBS.Api\IBS.Api.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Carriers\IBS.Carriers.Infrastructure\IBS.Carriers.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Tenants\IBS.Tenants.Infrastructure\IBS.Tenants.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Clients\IBS.Clients.Infrastructure\IBS.Clients.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Identity\IBS.Identity.Infrastructure\IBS.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Policies\IBS.Policies.Infrastructure\IBS.Policies.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Claims\IBS.Claims.Infrastructure\IBS.Claims.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Commissions\IBS.Commissions.Infrastructure\IBS.Commissions.Infrastructure.csproj" />
+    <ProjectReference Include="..\..\src\Contexts\Documents\IBS.Documents.Infrastructure\IBS.Documents.Infrastructure.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Using Include="Xunit" />
+  </ItemGroup>
+
+</Project>

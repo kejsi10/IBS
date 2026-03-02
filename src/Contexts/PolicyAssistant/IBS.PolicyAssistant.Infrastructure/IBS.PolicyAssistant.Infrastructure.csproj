@@ -1,0 +1,23 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Azure.AI.OpenAI" Version="2.1.0" />
+    <PackageReference Include="Microsoft.Extensions.Http" Version="8.0.0" />
+    <PackageReference Include="Microsoft.Extensions.Options" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\IBS.BuildingBlocks.Infrastructure\IBS.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\IBS.PolicyAssistant.Application\IBS.PolicyAssistant.Application.csproj" />
+    <ProjectReference Include="..\IBS.PolicyAssistant.Domain\IBS.PolicyAssistant.Domain.csproj" />
+    <ProjectReference Include="..\..\Policies\IBS.Policies.Application\IBS.Policies.Application.csproj" />
+    <ProjectReference Include="..\..\Carriers\IBS.Carriers.Domain\IBS.Carriers.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

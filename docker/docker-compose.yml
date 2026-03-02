@@ -1,0 +1,75 @@
+version: '3.8'
+
+services:
+  # SQL Server
+  sqlserver:
+    image: mcr.microsoft.com/mssql/server:2022-latest
+    container_name: ibs-sqlserver
+    environment:
+      SA_PASSWORD: "${SQL_SA_PASSWORD:-YourStrong@Passw0rd}"
+      ACCEPT_EULA: "Y"
+    ports:
+      - "${SQL_PORT:-1433}:1433"
+    volumes:
+      - sqlserver-data:/var/opt/mssql
+    healthcheck:
+      test: /opt/mssql-tools18/bin/sqlcmd -S localhost -U sa -P "${SQL_SA_PASSWORD:-YourStrong@Passw0rd}" -C -Q "SELECT 1" || exit 1
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ibs-network
+
+  # Redis Cache
+  redis:
+    image: redis:7-alpine
+    container_name: ibs-redis
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis-data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - ibs-network
+
+  # API Service
+  api:
+    build:
+      context: ..
+      dockerfile: docker/Dockerfile
+    container_name: ibs-api
+    environment:
+      - ASPNETCORE_ENVIRONMENT=Development
+      - ASPNETCORE_URLS=http://+:8080
+      - ConnectionStrings__DefaultConnection=Server=sqlserver;Database=IBS;User Id=sa;Password=${SQL_SA_PASSWORD:-YourStrong@Passw0rd};TrustServerCertificate=True
+      - Redis__ConnectionString=redis:6379
+      - Jwt__SecretKey=${JWT_SECRET_KEY:-your-super-secret-key-here-that-is-at-least-32-characters}
+      - Jwt__Issuer=IBS-API
+      - Jwt__Audience=IBS-Web
+    ports:
+      - "${API_PORT:-5000}:8080"
+    depends_on:
+      sqlserver:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8080/health"]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    networks:
+      - ibs-network
+
+volumes:
+  sqlserver-data:
+  redis-data:
+
+networks:
+  ibs-network:
+    driver: bridge

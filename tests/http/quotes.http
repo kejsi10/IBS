@@ -1,0 +1,152 @@
+### Quotes API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### Variables (update after creating resources)
+@clientId = 00000000-0000-0000-0000-000000000002
+@carrierId1 = 00000000-0000-0000-0000-000000000003
+@carrierId2 = 00000000-0000-0000-0000-000000000004
+@quoteId =
+@quoteCarrierId1 =
+@quoteCarrierId2 =
+
+### ============================================
+### Quote CRUD Operations
+### ============================================
+
+### Create a General Liability quote
+# @name createQuote
+POST {{baseUrl}}/quotes
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "clientId": "{{clientId}}",
+  "lineOfBusiness": "GeneralLiability",
+  "effectiveDate": "2025-07-01",
+  "expirationDate": "2026-07-01",
+  "notes": "Annual GL quote request"
+}
+
+### Get all quotes
+GET {{baseUrl}}/quotes
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Get all quotes with filters
+GET {{baseUrl}}/quotes?status=Draft&lineOfBusiness=GeneralLiability&page=1&pageSize=10
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Get quote by ID
+GET {{baseUrl}}/quotes/{{quoteId}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Get quotes summary
+GET {{baseUrl}}/quotes/summary
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Get quotes by client
+GET {{baseUrl}}/clients/{{clientId}}/quotes
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### ============================================
+### Carrier Management
+### ============================================
+
+### Add first carrier to quote
+# @name addCarrier1
+POST {{baseUrl}}/quotes/{{quoteId}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "carrierId": "{{carrierId1}}"
+}
+
+### Add second carrier to quote
+# @name addCarrier2
+POST {{baseUrl}}/quotes/{{quoteId}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "carrierId": "{{carrierId2}}"
+}
+
+### Remove a carrier from quote
+DELETE {{baseUrl}}/quotes/{{quoteId}}/carriers/{{quoteCarrierId2}}
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### ============================================
+### Quote Lifecycle
+### ============================================
+
+### Submit quote to carriers
+POST {{baseUrl}}/quotes/{{quoteId}}/submit
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Record a quoted response from carrier 1
+POST {{baseUrl}}/quotes/{{quoteId}}/carriers/{{quoteCarrierId1}}/respond
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "isQuoted": true,
+  "premiumAmount": 12500.00,
+  "premiumCurrency": "USD",
+  "conditions": "Subject to loss control inspection",
+  "carrierExpiresAt": "2025-08-01"
+}
+
+### Record a declined response from carrier 2
+POST {{baseUrl}}/quotes/{{quoteId}}/carriers/{{quoteCarrierId2}}/respond
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "isQuoted": false,
+  "declinationReason": "Outside appetite for this class of business"
+}
+
+### Accept carrier 1's quote (creates a draft policy)
+# @name acceptQuote
+POST {{baseUrl}}/quotes/{{quoteId}}/carriers/{{quoteCarrierId1}}/accept
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}
+
+### Cancel a quote
+POST {{baseUrl}}/quotes/{{quoteId}}/cancel
+Authorization: {{authToken}}
+X-Tenant-Id: {{tenantId}}

@@ -1,0 +1,4674 @@
+openapi: 3.0.3
+info:
+  title: Insurance Broker System (IBS) API
+  description: |
+    RESTful API for the Insurance Broker System - a multi-tenant insurance agency management platform.
+
+    ## Authentication
+    All endpoints (except authentication) require a valid JWT Bearer token obtained via the `/auth/login` endpoint.
+
+    ## Multi-Tenancy
+    The system is multi-tenant. Tenant context is determined from the JWT token claims.
+
+    ## Error Responses
+    All error responses follow a consistent format with an `error` field containing the error message.
+  version: 1.0.0
+  contact:
+    name: IBS API Support
+  license:
+    name: Proprietary
+
+servers:
+  - url: https://localhost:7001/api/v1
+    description: Development server
+  - url: https://api.ibs.example.com/api/v1
+    description: Production server
+
+tags:
+  - name: Authentication
+    description: User authentication and session management
+  - name: Carriers
+    description: Insurance carrier management
+  - name: Clients
+    description: Client/CRM management
+  - name: Policies
+    description: Policy lifecycle management
+  - name: Coverages
+    description: Policy coverage management
+  - name: Endorsements
+    description: Policy endorsement workflow
+  - name: Quotes
+    description: Quote request and carrier response management
+  - name: Commission Schedules
+    description: Commission schedule management
+  - name: Commission Statements
+    description: Commission statement and line item management
+  - name: Commission Reports
+    description: Commission statistics and reporting
+  - name: Documents
+    description: Document storage, categorization, and download management
+  - name: Document Templates
+    description: Handlebars HTML template management for document generation (COI, Policy Summary)
+  - name: COI Generation
+    description: Certificate of Insurance PDF generation from templates and live policy data
+
+security:
+  - bearerAuth: []
+
+paths:
+  # ============================================
+  # Authentication Endpoints
+  # ============================================
+  /auth/login:
+    post:
+      tags:
+        - Authentication
+      summary: Authenticate user
+      description: Authenticates a user and returns JWT access and refresh tokens.
+      operationId: login
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/LoginRequest'
+      responses:
+        '200':
+          description: Successfully authenticated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Invalid credentials
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/refresh:
+    post:
+      tags:
+        - Authentication
+      summary: Refresh access token
+      description: Exchanges a valid refresh token for a new access token.
+      operationId: refreshToken
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RefreshTokenRequest'
+      responses:
+        '200':
+          description: Token refreshed successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/LoginResponse'
+        '401':
+          description: Invalid or expired refresh token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/logout:
+    post:
+      tags:
+        - Authentication
+      summary: Logout user
+      description: Invalidates the current refresh token.
+      operationId: logout
+      responses:
+        '204':
+          description: Successfully logged out
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/forgot-password:
+    post:
+      tags:
+        - Authentication
+      summary: Request password reset
+      description: Sends a password reset email to the specified address.
+      operationId: forgotPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ForgotPasswordRequest'
+      responses:
+        '204':
+          description: Password reset email sent (if account exists)
+
+  /auth/reset-password:
+    post:
+      tags:
+        - Authentication
+      summary: Reset password
+      description: Resets the user's password using a valid reset token.
+      operationId: resetPassword
+      security: []
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/ResetPasswordRequest'
+      responses:
+        '204':
+          description: Password reset successfully
+        '400':
+          description: Invalid or expired token
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /auth/me:
+    get:
+      tags:
+        - Authentication
+      summary: Get current user
+      description: Returns the authenticated user's profile information.
+      operationId: getCurrentUser
+      responses:
+        '200':
+          description: Current user information
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CurrentUserResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: User not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # Carrier Endpoints
+  # ============================================
+  /carriers:
+    get:
+      tags:
+        - Carriers
+      summary: List all carriers
+      description: Returns all carriers for the current tenant.
+      operationId: getCarriers
+      responses:
+        '200':
+          description: List of carriers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarrierSummaryDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Carriers
+      summary: Create a carrier
+      description: Creates a new insurance carrier.
+      operationId: createCarrier
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateCarrierRequest'
+      responses:
+        '201':
+          description: Carrier created successfully
+          headers:
+            Location:
+              description: URL of the created carrier
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Carrier code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carriers/{id}:
+    get:
+      tags:
+        - Carriers
+      summary: Get carrier by ID
+      description: Returns a specific carrier with full details.
+      operationId: getCarrierById
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      responses:
+        '200':
+          description: Carrier details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CarrierDto'
+        '404':
+          description: Carrier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Carriers
+      summary: Update carrier
+      description: Updates an existing carrier's information.
+      operationId: updateCarrier
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCarrierRequest'
+      responses:
+        '204':
+          description: Carrier updated successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Carrier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carriers/{id}/deactivate:
+    post:
+      tags:
+        - Carriers
+      summary: Deactivate carrier
+      description: Deactivates a carrier, preventing new policies.
+      operationId: deactivateCarrier
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: false
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DeactivateCarrierRequest'
+      responses:
+        '204':
+          description: Carrier deactivated successfully
+        '404':
+          description: Carrier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carriers/{id}/products:
+    post:
+      tags:
+        - Carriers
+      summary: Add product to carrier
+      description: Adds a new insurance product to a carrier's catalog.
+      operationId: addProduct
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProductRequest'
+      responses:
+        '201':
+          description: Product added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Carrier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: Product code already exists
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carriers/{id}/appetites:
+    post:
+      tags:
+        - Carriers
+      summary: Add appetite rule to carrier
+      description: Adds an appetite rule defining what risks the carrier accepts.
+      operationId: addAppetite
+      parameters:
+        - $ref: '#/components/parameters/CarrierId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddAppetiteRequest'
+      responses:
+        '201':
+          description: Appetite rule added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Carrier not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /carriers/status/{status}:
+    get:
+      tags:
+        - Carriers
+      summary: Get carriers by status
+      description: Returns carriers filtered by status.
+      operationId: getCarriersByStatus
+      parameters:
+        - name: status
+          in: path
+          required: true
+          schema:
+            $ref: '#/components/schemas/CarrierStatus'
+      responses:
+        '200':
+          description: List of carriers
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarrierSummaryDto'
+
+  /carriers/search:
+    get:
+      tags:
+        - Carriers
+      summary: Search carriers
+      description: Searches carriers by name or code.
+      operationId: searchCarriers
+      parameters:
+        - name: searchTerm
+          in: query
+          required: true
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Search results
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CarrierSummaryDto'
+
+  # ============================================
+  # Client Endpoints
+  # ============================================
+  /clients:
+    get:
+      tags:
+        - Clients
+      summary: List clients
+      description: Returns a paginated list of clients with optional search.
+      operationId: getClients
+      parameters:
+        - name: page
+          in: query
+          schema:
+            type: integer
+            default: 1
+            minimum: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            default: 20
+            minimum: 1
+            maximum: 100
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by name, email, or phone
+      responses:
+        '200':
+          description: Paginated list of clients
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientListResult'
+
+  /clients/{id}:
+    get:
+      tags:
+        - Clients
+      summary: Get client by ID
+      description: Returns a specific client with full details.
+      operationId: getClientById
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '200':
+          description: Client details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ClientDto'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Clients
+      summary: Update client
+      description: Updates an existing client's information.
+      operationId: updateClient
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateClientRequest'
+      responses:
+        '204':
+          description: Client updated successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/{id}/deactivate:
+    post:
+      tags:
+        - Clients
+      summary: Deactivate client
+      description: Soft-deletes a client by setting their status to inactive.
+      operationId: deactivateClient
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+      responses:
+        '204':
+          description: Client deactivated successfully
+        '404':
+          description: Client not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/individual:
+    post:
+      tags:
+        - Clients
+      summary: Create individual client
+      description: Creates a new individual (person) client.
+      operationId: createIndividualClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateIndividualClientRequest'
+      responses:
+        '201':
+          description: Client created successfully
+          headers:
+            Location:
+              description: URL of the created client
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/business:
+    post:
+      tags:
+        - Clients
+      summary: Create business client
+      description: Creates a new business (company) client.
+      operationId: createBusinessClient
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateBusinessClientRequest'
+      responses:
+        '201':
+          description: Client created successfully
+          headers:
+            Location:
+              description: URL of the created client
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /clients/{clientId}/policies:
+    get:
+      tags:
+        - Policies
+      summary: Get policies by client
+      description: Returns all policies for a specific client.
+      operationId: getPoliciesByClient
+      parameters:
+        - $ref: '#/components/parameters/ClientId'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortDirection'
+      responses:
+        '200':
+          description: List of client policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResult'
+
+  # ============================================
+  # Policy Endpoints
+  # ============================================
+  /policies:
+    get:
+      tags:
+        - Policies
+      summary: List policies
+      description: Returns a paginated list of policies with filtering options.
+      operationId: getPolicies
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by policy number
+        - name: clientId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: carrierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/PolicyStatus'
+        - name: lineOfBusiness
+          in: query
+          schema:
+            $ref: '#/components/schemas/LineOfBusiness'
+        - name: effectiveDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: effectiveDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: expirationDateFrom
+          in: query
+          schema:
+            type: string
+            format: date
+        - name: expirationDateTo
+          in: query
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortDirection'
+      responses:
+        '200':
+          description: Paginated list of policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResult'
+
+    post:
+      tags:
+        - Policies
+      summary: Create policy
+      description: Creates a new insurance policy in Draft status.
+      operationId: createPolicy
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreatePolicyRequest'
+      responses:
+        '201':
+          description: Policy created successfully
+          headers:
+            Location:
+              description: URL of the created policy
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}:
+    get:
+      tags:
+        - Policies
+      summary: Get policy by ID
+      description: Returns a specific policy with full details including coverages and endorsements.
+      operationId: getPolicyById
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '200':
+          description: Policy details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyDto'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/bind:
+    post:
+      tags:
+        - Policies
+      summary: Bind policy
+      description: Binds a draft policy, committing to the coverage. Requires at least one coverage.
+      operationId: bindPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '204':
+          description: Policy bound successfully
+        '400':
+          description: Policy cannot be bound (wrong status or no coverages)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/activate:
+    post:
+      tags:
+        - Policies
+      summary: Activate policy
+      description: Activates (issues) a bound policy, making it effective.
+      operationId: activatePolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '204':
+          description: Policy activated successfully
+        '400':
+          description: Policy cannot be activated (must be in Bound status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/cancel:
+    post:
+      tags:
+        - Policies
+      summary: Cancel policy
+      description: Cancels a policy with a specified reason and cancellation date.
+      operationId: cancelPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CancelPolicyRequest'
+      responses:
+        '204':
+          description: Policy cancelled successfully
+        '400':
+          description: Policy cannot be cancelled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/renew:
+    post:
+      tags:
+        - Policies
+      summary: Renew policy
+      description: Creates a renewal policy from an existing active policy, copying all coverages.
+      operationId: renewPolicy
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      responses:
+        '201':
+          description: Renewal policy created successfully
+          headers:
+            Location:
+              description: URL of the renewal policy
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+                    description: ID of the new renewal policy
+        '400':
+          description: Policy cannot be renewed (must be Active or PendingRenewal)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/coverages:
+    post:
+      tags:
+        - Coverages
+      summary: Add coverage to policy
+      description: Adds a new coverage to a draft policy.
+      operationId: addCoverage
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCoverageRequest'
+      responses:
+        '201':
+          description: Coverage added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request or policy not in Draft status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/coverages/{coverageId}:
+    put:
+      tags:
+        - Coverages
+      summary: Update coverage
+      description: Updates an existing coverage on a draft policy.
+      operationId: updateCoverage
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/CoverageId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateCoverageRequest'
+      responses:
+        '204':
+          description: Coverage updated successfully
+        '400':
+          description: Invalid request or policy not in Draft status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy or coverage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    delete:
+      tags:
+        - Coverages
+      summary: Remove coverage
+      description: Removes (deactivates) a coverage from a draft policy.
+      operationId: removeCoverage
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/CoverageId'
+      responses:
+        '204':
+          description: Coverage removed successfully
+        '400':
+          description: Policy not in Draft status
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy or coverage not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/endorsements:
+    post:
+      tags:
+        - Endorsements
+      summary: Add endorsement
+      description: Adds a new endorsement to an active policy.
+      operationId: addEndorsement
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddEndorsementRequest'
+      responses:
+        '201':
+          description: Endorsement added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request or endorsement date outside policy period
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/endorsements/{endorsementId}/approve:
+    post:
+      tags:
+        - Endorsements
+      summary: Approve endorsement
+      description: Approves a pending endorsement.
+      operationId: approveEndorsement
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/EndorsementId'
+      responses:
+        '204':
+          description: Endorsement approved successfully
+        '400':
+          description: Endorsement cannot be approved (not in Pending status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy or endorsement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/endorsements/{endorsementId}/issue:
+    post:
+      tags:
+        - Endorsements
+      summary: Issue endorsement
+      description: Issues an approved endorsement, applying premium changes to the policy.
+      operationId: issueEndorsement
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/EndorsementId'
+      responses:
+        '204':
+          description: Endorsement issued successfully
+        '400':
+          description: Endorsement cannot be issued (not in Approved status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy or endorsement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/{id}/endorsements/{endorsementId}/reject:
+    post:
+      tags:
+        - Endorsements
+      summary: Reject endorsement
+      description: Rejects a pending endorsement with a reason.
+      operationId: rejectEndorsement
+      parameters:
+        - $ref: '#/components/parameters/PolicyId'
+        - $ref: '#/components/parameters/EndorsementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RejectEndorsementRequest'
+      responses:
+        '204':
+          description: Endorsement rejected successfully
+        '400':
+          description: Endorsement cannot be rejected (not in Pending status)
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Policy or endorsement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /policies/expiring:
+    get:
+      tags:
+        - Policies
+      summary: Get expiring policies
+      description: Returns policies expiring within the specified date range.
+      operationId: getExpiringPolicies
+      parameters:
+        - name: startDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - name: endDate
+          in: query
+          required: true
+          schema:
+            type: string
+            format: date
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: List of expiring policies
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResult'
+
+  /policies/due-for-renewal:
+    get:
+      tags:
+        - Policies
+      summary: Get policies due for renewal
+      description: Returns active policies due for renewal within the specified number of days.
+      operationId: getPoliciesDueForRenewal
+      parameters:
+        - name: daysUntilExpiration
+          in: query
+          schema:
+            type: integer
+            default: 60
+            minimum: 1
+            maximum: 365
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: List of policies due for renewal
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/PolicyListResult'
+
+  # ============================================
+  # Quote Endpoints
+  # ============================================
+  /quotes:
+    get:
+      tags:
+        - Quotes
+      summary: List quotes
+      description: Returns a paginated list of quotes with optional filtering.
+      operationId: getQuotes
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/QuoteStatus'
+        - name: clientId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: lineOfBusiness
+          in: query
+          schema:
+            $ref: '#/components/schemas/LineOfBusiness'
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Paginated list of quotes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSearchResult'
+    post:
+      tags:
+        - Quotes
+      summary: Create a new quote
+      description: Creates a new quote in Draft status.
+      operationId: createQuote
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateQuoteRequest'
+      responses:
+        '201':
+          description: Quote created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Validation error
+
+  /quotes/summary:
+    get:
+      tags:
+        - Quotes
+      summary: Get quote summary statistics
+      description: Returns dashboard statistics for quotes.
+      operationId: getQuotesSummary
+      responses:
+        '200':
+          description: Quote summary statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSummaryStats'
+
+  /quotes/{id}:
+    get:
+      tags:
+        - Quotes
+      summary: Get quote details
+      description: Returns full quote details including carrier responses.
+      operationId: getQuoteById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quote details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteDetail'
+        '404':
+          description: Quote not found
+
+  /quotes/{id}/carriers:
+    post:
+      tags:
+        - Quotes
+      summary: Add carrier to quote
+      description: Adds a carrier to a draft quote.
+      operationId: addCarrierToQuote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddCarrierToQuoteRequest'
+      responses:
+        '201':
+          description: Carrier added
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Quote is not in Draft status
+
+  /quotes/{id}/carriers/{quoteCarrierId}:
+    delete:
+      tags:
+        - Quotes
+      summary: Remove carrier from quote
+      description: Removes a carrier from a draft quote.
+      operationId: removeCarrierFromQuote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteCarrierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Carrier removed
+        '400':
+          description: Quote is not in Draft status
+
+  /quotes/{id}/submit:
+    post:
+      tags:
+        - Quotes
+      summary: Submit quote to carriers
+      description: Transitions quote from Draft to Submitted. Requires at least one carrier.
+      operationId: submitQuote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Quote submitted
+        '400':
+          description: Quote cannot be submitted
+
+  /quotes/{id}/carriers/{quoteCarrierId}/respond:
+    post:
+      tags:
+        - Quotes
+      summary: Record carrier response
+      description: Records a carrier's quoted or declined response.
+      operationId: recordQuoteResponse
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteCarrierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/RecordQuoteResponseRequest'
+      responses:
+        '204':
+          description: Response recorded
+        '400':
+          description: Invalid response
+
+  /quotes/{id}/carriers/{quoteCarrierId}/accept:
+    post:
+      tags:
+        - Quotes
+      summary: Accept carrier quote
+      description: Accepts a carrier's quoted response and creates a draft policy.
+      operationId: acceptQuoteCarrier
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - name: quoteCarrierId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Quote accepted, policy created
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  policyId:
+                    type: string
+                    format: uuid
+        '400':
+          description: Quote cannot be accepted
+
+  /quotes/{id}/cancel:
+    post:
+      tags:
+        - Quotes
+      summary: Cancel quote
+      description: Cancels a draft or submitted quote.
+      operationId: cancelQuote
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Quote cancelled
+        '400':
+          description: Quote cannot be cancelled
+
+  /clients/{clientId}/quotes:
+    get:
+      tags:
+        - Quotes
+      summary: Get quotes for a client
+      description: Returns quotes associated with a specific client.
+      operationId: getQuotesByClient
+      parameters:
+        - name: clientId
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+      responses:
+        '200':
+          description: Client quotes
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/QuoteSearchResult'
+
+  # ============================================
+  # Commission Schedule Endpoints
+  # ============================================
+  /commissions/schedules:
+    get:
+      tags:
+        - Commission Schedules
+      summary: List commission schedules
+      description: Returns a paginated list of commission schedules with optional filtering.
+      operationId: getCommissionSchedules
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by carrier name or line of business
+        - name: carrierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: lineOfBusiness
+          in: query
+          schema:
+            $ref: '#/components/schemas/LineOfBusiness'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortDirection'
+      responses:
+        '200':
+          description: Paginated list of commission schedules
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ScheduleListResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Commission Schedules
+      summary: Create commission schedule
+      description: Creates a new commission schedule for a carrier and line of business.
+      operationId: createCommissionSchedule
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateScheduleRequest'
+      responses:
+        '201':
+          description: Schedule created successfully
+          headers:
+            Location:
+              description: URL of the created schedule
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/schedules/{id}:
+    get:
+      tags:
+        - Commission Schedules
+      summary: Get commission schedule by ID
+      description: Returns a specific commission schedule with full details.
+      operationId: getCommissionScheduleById
+      parameters:
+        - $ref: '#/components/parameters/CommissionScheduleId'
+      responses:
+        '200':
+          description: Commission schedule details
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionScheduleDto'
+        '404':
+          description: Schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    put:
+      tags:
+        - Commission Schedules
+      summary: Update commission schedule
+      description: Updates an existing commission schedule.
+      operationId: updateCommissionSchedule
+      parameters:
+        - $ref: '#/components/parameters/CommissionScheduleId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateScheduleRequest'
+      responses:
+        '204':
+          description: Schedule updated successfully
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/schedules/{id}/deactivate:
+    post:
+      tags:
+        - Commission Schedules
+      summary: Deactivate commission schedule
+      description: Deactivates a commission schedule, preventing it from being used for new commission calculations.
+      operationId: deactivateCommissionSchedule
+      parameters:
+        - $ref: '#/components/parameters/CommissionScheduleId'
+      responses:
+        '204':
+          description: Schedule deactivated successfully
+        '400':
+          description: Schedule cannot be deactivated
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Schedule not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # Commission Statement Endpoints
+  # ============================================
+  /commissions/statements:
+    get:
+      tags:
+        - Commission Statements
+      summary: List commission statements
+      description: Returns a paginated list of commission statements with optional filtering.
+      operationId: getCommissionStatements
+      parameters:
+        - name: search
+          in: query
+          schema:
+            type: string
+          description: Search by statement number or carrier name
+        - name: carrierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: status
+          in: query
+          schema:
+            $ref: '#/components/schemas/StatementStatus'
+        - name: periodMonth
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+        - name: periodYear
+          in: query
+          schema:
+            type: integer
+        - $ref: '#/components/parameters/Page'
+        - $ref: '#/components/parameters/PageSize'
+        - $ref: '#/components/parameters/SortBy'
+        - $ref: '#/components/parameters/SortDirection'
+      responses:
+        '200':
+          description: Paginated list of commission statements
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/StatementListResult'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+    post:
+      tags:
+        - Commission Statements
+      summary: Create commission statement
+      description: Creates a new commission statement received from a carrier.
+      operationId: createCommissionStatement
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateStatementRequest'
+      responses:
+        '201':
+          description: Statement created successfully
+          headers:
+            Location:
+              description: URL of the created statement
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}:
+    get:
+      tags:
+        - Commission Statements
+      summary: Get commission statement by ID
+      description: Returns a specific commission statement with line items and producer splits.
+      operationId: getCommissionStatementById
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+      responses:
+        '200':
+          description: Commission statement details with line items and producer splits
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionStatementDto'
+        '404':
+          description: Statement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}/line-items:
+    post:
+      tags:
+        - Commission Statements
+      summary: Add line item to statement
+      description: Adds a commission line item to an existing statement.
+      operationId: addCommissionLineItem
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddLineItemRequest'
+      responses:
+        '200':
+          description: Line item added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Statement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}/line-items/{lineItemId}/reconcile:
+    put:
+      tags:
+        - Commission Statements
+      summary: Reconcile line item
+      description: Marks a commission line item as reconciled against a policy.
+      operationId: reconcileCommissionLineItem
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+        - $ref: '#/components/parameters/LineItemId'
+      responses:
+        '204':
+          description: Line item reconciled successfully
+        '400':
+          description: Line item cannot be reconciled
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Statement or line item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}/line-items/{lineItemId}/dispute:
+    post:
+      tags:
+        - Commission Statements
+      summary: Dispute line item
+      description: Disputes a commission line item with a reason.
+      operationId: disputeCommissionLineItem
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+        - $ref: '#/components/parameters/LineItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/DisputeLineItemRequest'
+      responses:
+        '204':
+          description: Line item disputed successfully
+        '400':
+          description: Line item cannot be disputed
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Statement or line item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}/line-items/{lineItemId}/splits:
+    post:
+      tags:
+        - Commission Statements
+      summary: Add producer split to line item
+      description: Adds a producer split allocation to a commission line item.
+      operationId: addProducerSplit
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+        - $ref: '#/components/parameters/LineItemId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/AddProducerSplitRequest'
+      responses:
+        '200':
+          description: Producer split added successfully
+          content:
+            application/json:
+              schema:
+                type: object
+                properties:
+                  id:
+                    type: string
+                    format: uuid
+        '400':
+          description: Invalid request
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Statement or line item not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/statements/{id}/status:
+    put:
+      tags:
+        - Commission Statements
+      summary: Update statement status
+      description: Transitions a commission statement to a new status in its lifecycle.
+      operationId: updateCommissionStatementStatus
+      parameters:
+        - $ref: '#/components/parameters/CommissionStatementId'
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateStatementStatusRequest'
+      responses:
+        '204':
+          description: Statement status updated successfully
+        '400':
+          description: Invalid status transition
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Statement not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # Commission Report Endpoints
+  # ============================================
+  /commissions/statistics:
+    get:
+      tags:
+        - Commission Reports
+      summary: Get commission statistics
+      description: Returns commission statistics for the dashboard including totals and breakdowns.
+      operationId: getCommissionStatistics
+      responses:
+        '200':
+          description: Commission statistics
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CommissionStatisticsDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/reports/summary:
+    get:
+      tags:
+        - Commission Reports
+      summary: Get commission summary report
+      description: Returns a commission summary report grouped by carrier and period.
+      operationId: getCommissionSummaryReport
+      parameters:
+        - name: carrierId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by carrier
+        - name: periodMonth
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by period month
+        - name: periodYear
+          in: query
+          schema:
+            type: integer
+          description: Filter by period year
+      responses:
+        '200':
+          description: Commission summary report entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/CommissionSummaryEntryDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /commissions/reports/producer:
+    get:
+      tags:
+        - Commission Reports
+      summary: Get producer report
+      description: Returns a producer commission report grouped by producer and period.
+      operationId: getProducerReport
+      parameters:
+        - name: producerId
+          in: query
+          schema:
+            type: string
+            format: uuid
+          description: Filter by producer
+        - name: periodMonth
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 12
+          description: Filter by period month
+        - name: periodYear
+          in: query
+          schema:
+            type: integer
+          description: Filter by period year
+      responses:
+        '200':
+          description: Producer report entries
+          content:
+            application/json:
+              schema:
+                type: array
+                items:
+                  $ref: '#/components/schemas/ProducerReportEntryDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # Document Endpoints
+  # ============================================
+  /documents/upload:
+    post:
+      tags:
+        - Documents
+      summary: Upload a document
+      description: Uploads a file with associated metadata. Returns the new document ID.
+      operationId: uploadDocument
+      requestBody:
+        required: true
+        content:
+          multipart/form-data:
+            schema:
+              type: object
+              required:
+                - file
+                - entityType
+                - category
+              properties:
+                file:
+                  type: string
+                  format: binary
+                entityType:
+                  $ref: '#/components/schemas/DocumentEntityType'
+                category:
+                  $ref: '#/components/schemas/DocumentCategory'
+                entityId:
+                  type: string
+                  format: uuid
+                  description: Optional ID of the linked entity (policy, client, claim, carrier)
+                description:
+                  type: string
+                  maxLength: 1000
+      responses:
+        '201':
+          description: Document uploaded successfully
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents:
+    get:
+      tags:
+        - Documents
+      summary: List documents
+      description: Returns a paginated list of documents filtered by the provided parameters.
+      operationId: listDocuments
+      parameters:
+        - name: searchTerm
+          in: query
+          schema:
+            type: string
+          description: Search by file name or description
+        - name: category
+          in: query
+          schema:
+            $ref: '#/components/schemas/DocumentCategory'
+        - name: entityType
+          in: query
+          schema:
+            $ref: '#/components/schemas/DocumentEntityType'
+        - name: entityId
+          in: query
+          schema:
+            type: string
+            format: uuid
+        - name: includeArchived
+          in: query
+          schema:
+            type: boolean
+            default: false
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated document list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentSearchResultDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{id}:
+    get:
+      tags:
+        - Documents
+      summary: Get document by ID
+      operationId: getDocumentById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Document metadata
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentDetailDto'
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    delete:
+      tags:
+        - Documents
+      summary: Archive a document
+      description: Soft-deletes a document by marking it as archived.
+      operationId: archiveDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Document archived successfully
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/{id}/download:
+    get:
+      tags:
+        - Documents
+      summary: Download document
+      description: Returns a redirect (302) to a temporary pre-signed SAS URL for the document blob.
+      operationId: downloadDocument
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '302':
+          description: Redirect to pre-signed download URL
+          headers:
+            Location:
+              schema:
+                type: string
+                format: uri
+        '404':
+          description: Document not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # Document Template Endpoints
+  # ============================================
+  /documents/templates:
+    get:
+      tags:
+        - Document Templates
+      summary: List document templates
+      operationId: listDocumentTemplates
+      parameters:
+        - name: searchTerm
+          in: query
+          schema:
+            type: string
+        - name: templateType
+          in: query
+          schema:
+            $ref: '#/components/schemas/TemplateType'
+        - name: isActive
+          in: query
+          schema:
+            type: boolean
+        - name: page
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            default: 1
+        - name: pageSize
+          in: query
+          schema:
+            type: integer
+            minimum: 1
+            maximum: 100
+            default: 20
+      responses:
+        '200':
+          description: Paginated template list
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentTemplateSearchResultDto'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    post:
+      tags:
+        - Document Templates
+      summary: Create document template
+      operationId: createDocumentTemplate
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/CreateDocumentTemplateRequest'
+      responses:
+        '201':
+          description: Template created
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/templates/{id}:
+    get:
+      tags:
+        - Document Templates
+      summary: Get template by ID
+      operationId: getDocumentTemplateById
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '200':
+          description: Template detail
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/DocumentTemplateDetailDto'
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+    put:
+      tags:
+        - Document Templates
+      summary: Update document template
+      operationId: updateDocumentTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/UpdateDocumentTemplateRequest'
+      responses:
+        '204':
+          description: Template updated
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/templates/{id}/activate:
+    post:
+      tags:
+        - Document Templates
+      summary: Activate a template
+      operationId: activateDocumentTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template activated
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /documents/templates/{id}/deactivate:
+    post:
+      tags:
+        - Document Templates
+      summary: Deactivate a template
+      operationId: deactivateDocumentTemplate
+      parameters:
+        - name: id
+          in: path
+          required: true
+          schema:
+            type: string
+            format: uuid
+      responses:
+        '204':
+          description: Template deactivated
+        '404':
+          description: Template not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  # ============================================
+  # COI Generation Endpoints
+  # ============================================
+  /documents/generate-coi:
+    post:
+      tags:
+        - COI Generation
+      summary: Generate Certificate of Insurance
+      description: |
+        Renders the specified Handlebars template with live policy data from the database
+        (client name, carrier name, coverages, broker name, etc.) using QuestPDF to produce
+        a PDF, stores it in Azure Blob Storage, and returns the new document ID.
+      operationId: generateCOI
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GenerateCOIRequest'
+      responses:
+        '201':
+          description: COI generated and stored as a document
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/CreateResponse'
+        '400':
+          description: Validation error
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: Template or policy not found
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '401':
+          description: Unauthorized
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  securitySchemes:
+    bearerAuth:
+      type: http
+      scheme: bearer
+      bearerFormat: JWT
+      description: JWT access token obtained from /auth/login
+
+  parameters:
+    PolicyId:
+      name: id
+      in: path
+      required: true
+      description: Policy unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    ClientId:
+      name: clientId
+      in: path
+      required: true
+      description: Client unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    CarrierId:
+      name: id
+      in: path
+      required: true
+      description: Carrier unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    CoverageId:
+      name: coverageId
+      in: path
+      required: true
+      description: Coverage unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    EndorsementId:
+      name: endorsementId
+      in: path
+      required: true
+      description: Endorsement unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    CommissionScheduleId:
+      name: id
+      in: path
+      required: true
+      description: Commission schedule unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    CommissionStatementId:
+      name: id
+      in: path
+      required: true
+      description: Commission statement unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    LineItemId:
+      name: lineItemId
+      in: path
+      required: true
+      description: Commission line item unique identifier
+      schema:
+        type: string
+        format: uuid
+
+    Page:
+      name: page
+      in: query
+      schema:
+        type: integer
+        default: 1
+        minimum: 1
+
+    PageSize:
+      name: pageSize
+      in: query
+      schema:
+        type: integer
+        default: 20
+        minimum: 1
+        maximum: 100
+
+    SortBy:
+      name: sortBy
+      in: query
+      schema:
+        type: string
+        default: CreatedAt
+
+    SortDirection:
+      name: sortDirection
+      in: query
+      schema:
+        type: string
+        enum: [asc, desc]
+        default: desc
+
+  schemas:
+    # ============================================
+    # Common Schemas
+    # ============================================
+    ErrorResponse:
+      type: object
+      properties:
+        error:
+          type: string
+          description: Error message
+
+    # ============================================
+    # Authentication Schemas
+    # ============================================
+    LoginRequest:
+      type: object
+      required:
+        - email
+        - password
+      properties:
+        email:
+          type: string
+          format: email
+        password:
+          type: string
+          format: password
+        tenantId:
+          type: string
+          format: uuid
+
+    LoginResponse:
+      type: object
+      properties:
+        accessToken:
+          type: string
+        refreshToken:
+          type: string
+        expiresIn:
+          type: integer
+          description: Token expiration time in seconds
+        userId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        fullName:
+          type: string
+        roles:
+          type: array
+          items:
+            type: string
+
+    RefreshTokenRequest:
+      type: object
+      required:
+        - refreshToken
+      properties:
+        refreshToken:
+          type: string
+
+    ForgotPasswordRequest:
+      type: object
+      required:
+        - email
+      properties:
+        email:
+          type: string
+          format: email
+        tenantId:
+          type: string
+          format: uuid
+
+    ResetPasswordRequest:
+      type: object
+      required:
+        - token
+        - email
+        - newPassword
+        - confirmPassword
+      properties:
+        token:
+          type: string
+        email:
+          type: string
+          format: email
+        newPassword:
+          type: string
+          format: password
+        confirmPassword:
+          type: string
+          format: password
+        tenantId:
+          type: string
+          format: uuid
+
+    CurrentUserResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        email:
+          type: string
+          format: email
+        firstName:
+          type: string
+        lastName:
+          type: string
+        fullName:
+          type: string
+        title:
+          type: string
+          nullable: true
+        phoneNumber:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+        lastLoginAt:
+          type: string
+          format: date-time
+          nullable: true
+        roles:
+          type: array
+          items:
+            type: string
+
+    # ============================================
+    # Carrier Schemas
+    # ============================================
+    CarrierStatus:
+      type: string
+      enum:
+        - Active
+        - Inactive
+        - Suspended
+
+    CarrierSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        status:
+          $ref: '#/components/schemas/CarrierStatus'
+        amBestRating:
+          type: string
+          nullable: true
+
+    CarrierDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        legalName:
+          type: string
+          nullable: true
+        status:
+          $ref: '#/components/schemas/CarrierStatus'
+        amBestRating:
+          type: string
+          nullable: true
+        naicCode:
+          type: string
+          nullable: true
+        websiteUrl:
+          type: string
+          nullable: true
+        apiEndpoint:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        products:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProductDto'
+        appetites:
+          type: array
+          items:
+            $ref: '#/components/schemas/AppetiteDto'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ProductDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        description:
+          type: string
+          nullable: true
+        minimumPremium:
+          type: number
+          format: decimal
+          nullable: true
+        effectiveDate:
+          type: string
+          format: date
+          nullable: true
+        expirationDate:
+          type: string
+          format: date
+          nullable: true
+        isActive:
+          type: boolean
+
+    AppetiteDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        states:
+          type: string
+        minYearsInBusiness:
+          type: integer
+          nullable: true
+        maxYearsInBusiness:
+          type: integer
+          nullable: true
+        minAnnualRevenue:
+          type: number
+          format: decimal
+          nullable: true
+        maxAnnualRevenue:
+          type: number
+          format: decimal
+          nullable: true
+        acceptedIndustries:
+          type: string
+          nullable: true
+        excludedIndustries:
+          type: string
+          nullable: true
+        isActive:
+          type: boolean
+
+    CreateCarrierRequest:
+      type: object
+      required:
+        - name
+        - code
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        code:
+          type: string
+          maxLength: 20
+        legalName:
+          type: string
+          maxLength: 200
+        amBestRating:
+          type: string
+        naicCode:
+          type: string
+        websiteUrl:
+          type: string
+          format: uri
+        notes:
+          type: string
+
+    UpdateCarrierRequest:
+      type: object
+      required:
+        - name
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        legalName:
+          type: string
+          maxLength: 200
+        amBestRating:
+          type: string
+        naicCode:
+          type: string
+        websiteUrl:
+          type: string
+          format: uri
+        apiEndpoint:
+          type: string
+          format: uri
+        notes:
+          type: string
+
+    DeactivateCarrierRequest:
+      type: object
+      properties:
+        reason:
+          type: string
+
+    AddProductRequest:
+      type: object
+      required:
+        - name
+        - code
+        - lineOfBusiness
+      properties:
+        name:
+          type: string
+        code:
+          type: string
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        description:
+          type: string
+        minimumPremium:
+          type: number
+          format: decimal
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+
+    AddAppetiteRequest:
+      type: object
+      required:
+        - lineOfBusiness
+      properties:
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        states:
+          type: string
+          default: ALL
+        minYearsInBusiness:
+          type: integer
+        maxYearsInBusiness:
+          type: integer
+        minAnnualRevenue:
+          type: number
+          format: decimal
+        maxAnnualRevenue:
+          type: number
+          format: decimal
+        minEmployees:
+          type: integer
+        maxEmployees:
+          type: integer
+        acceptedIndustries:
+          type: string
+        excludedIndustries:
+          type: string
+        notes:
+          type: string
+
+    # ============================================
+    # Client Schemas
+    # ============================================
+    ClientListResult:
+      type: object
+      properties:
+        clients:
+          type: array
+          items:
+            $ref: '#/components/schemas/ClientSummaryDto'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    ClientSummaryDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        displayName:
+          type: string
+        type:
+          type: string
+          enum: [Individual, Business]
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        status:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    ClientDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [Individual, Business]
+        status:
+          type: string
+        firstName:
+          type: string
+          nullable: true
+        lastName:
+          type: string
+          nullable: true
+        middleName:
+          type: string
+          nullable: true
+        suffix:
+          type: string
+          nullable: true
+        dateOfBirth:
+          type: string
+          format: date
+          nullable: true
+        businessName:
+          type: string
+          nullable: true
+        businessType:
+          type: string
+          nullable: true
+        dbaName:
+          type: string
+          nullable: true
+        industry:
+          type: string
+          nullable: true
+        yearEstablished:
+          type: integer
+          nullable: true
+        numberOfEmployees:
+          type: integer
+          nullable: true
+        annualRevenue:
+          type: number
+          format: decimal
+          nullable: true
+        website:
+          type: string
+          nullable: true
+        contacts:
+          type: array
+          items:
+            $ref: '#/components/schemas/ContactDto'
+        addresses:
+          type: array
+          items:
+            $ref: '#/components/schemas/AddressDto'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    ContactDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        firstName:
+          type: string
+        lastName:
+          type: string
+        email:
+          type: string
+          nullable: true
+        phone:
+          type: string
+          nullable: true
+        title:
+          type: string
+          nullable: true
+        isPrimary:
+          type: boolean
+
+    AddressDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        type:
+          type: string
+          enum: [Mailing, Physical, Billing]
+        line1:
+          type: string
+        line2:
+          type: string
+          nullable: true
+        city:
+          type: string
+        state:
+          type: string
+        postalCode:
+          type: string
+        country:
+          type: string
+        isPrimary:
+          type: boolean
+
+    CreateIndividualClientRequest:
+      type: object
+      required:
+        - firstName
+        - lastName
+      properties:
+        firstName:
+          type: string
+          maxLength: 100
+        lastName:
+          type: string
+          maxLength: 100
+        middleName:
+          type: string
+          maxLength: 100
+        suffix:
+          type: string
+          maxLength: 20
+        dateOfBirth:
+          type: string
+          format: date
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    CreateBusinessClientRequest:
+      type: object
+      required:
+        - businessName
+        - businessType
+      properties:
+        businessName:
+          type: string
+          maxLength: 200
+        businessType:
+          type: string
+          maxLength: 100
+        dbaName:
+          type: string
+          maxLength: 200
+        industry:
+          type: string
+          maxLength: 100
+        yearEstablished:
+          type: integer
+        numberOfEmployees:
+          type: integer
+        annualRevenue:
+          type: number
+          format: decimal
+        website:
+          type: string
+          format: uri
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    UpdateClientRequest:
+      type: object
+      properties:
+        firstName:
+          type: string
+        lastName:
+          type: string
+        middleName:
+          type: string
+        suffix:
+          type: string
+        dateOfBirth:
+          type: string
+          format: date
+        businessName:
+          type: string
+        businessType:
+          type: string
+        dbaName:
+          type: string
+        industry:
+          type: string
+        yearEstablished:
+          type: integer
+        numberOfEmployees:
+          type: integer
+        annualRevenue:
+          type: number
+          format: decimal
+        website:
+          type: string
+          format: uri
+        email:
+          type: string
+          format: email
+        phone:
+          type: string
+
+    # ============================================
+    # Policy Schemas
+    # ============================================
+    LineOfBusiness:
+      type: string
+      enum:
+        - PersonalAuto
+        - CommercialAuto
+        - Homeowners
+        - Renters
+        - GeneralLiability
+        - ProfessionalLiability
+        - WorkersCompensation
+        - CommercialProperty
+        - BusinessOwners
+        - Umbrella
+        - CyberLiability
+        - DirectorsOfficers
+        - EmploymentPractices
+        - InlandMarine
+        - Crime
+        - Surety
+        - Other
+
+    PolicyStatus:
+      type: string
+      enum:
+        - Draft
+        - Bound
+        - Active
+        - Cancelled
+        - Expired
+        - Renewed
+        - PendingRenewal
+        - NonRenewed
+
+    BillingType:
+      type: string
+      enum:
+        - DirectBill
+        - AgencyBill
+
+    PaymentPlan:
+      type: string
+      enum:
+        - Annual
+        - SemiAnnual
+        - Quarterly
+        - Monthly
+
+    CancellationType:
+      type: string
+      enum:
+        - FlatCancel
+        - InsuredRequest
+        - NonPayment
+        - Underwriting
+        - CarrierRequest
+
+    EndorsementStatus:
+      type: string
+      enum:
+        - Pending
+        - Approved
+        - Issued
+        - Rejected
+        - Cancelled
+
+    PolicyListResult:
+      type: object
+      properties:
+        policies:
+          type: array
+          items:
+            $ref: '#/components/schemas/PolicyListItemDto'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    PolicyListItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        policyNumber:
+          type: string
+        clientId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+          nullable: true
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+          nullable: true
+        lineOfBusiness:
+          type: string
+        policyType:
+          type: string
+        status:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        totalPremium:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+
+    PolicyDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        policyNumber:
+          type: string
+        clientId:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        lineOfBusiness:
+          type: string
+        policyType:
+          type: string
+        status:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        totalPremium:
+          type: number
+          format: decimal
+        currency:
+          type: string
+        billingType:
+          type: string
+        paymentPlan:
+          type: string
+        carrierPolicyNumber:
+          type: string
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        boundAt:
+          type: string
+          format: date-time
+          nullable: true
+        cancellationDate:
+          type: string
+          format: date
+          nullable: true
+        cancellationReason:
+          type: string
+          nullable: true
+        coverages:
+          type: array
+          items:
+            $ref: '#/components/schemas/CoverageDto'
+        endorsements:
+          type: array
+          items:
+            $ref: '#/components/schemas/EndorsementDto'
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+          nullable: true
+
+    CoverageDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        code:
+          type: string
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        limitAmount:
+          type: number
+          format: decimal
+          nullable: true
+        deductibleAmount:
+          type: number
+          format: decimal
+          nullable: true
+        premiumAmount:
+          type: number
+          format: decimal
+        isOptional:
+          type: boolean
+        isActive:
+          type: boolean
+
+    EndorsementDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        endorsementNumber:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        type:
+          type: string
+        description:
+          type: string
+        premiumChange:
+          type: number
+          format: decimal
+        status:
+          type: string
+        processedAt:
+          type: string
+          format: date-time
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+
+    CreatePolicyRequest:
+      type: object
+      required:
+        - clientId
+        - carrierId
+        - lineOfBusiness
+        - policyType
+        - effectiveDate
+        - expirationDate
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        policyType:
+          type: string
+          maxLength: 100
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        billingType:
+          $ref: '#/components/schemas/BillingType'
+          default: DirectBill
+        paymentPlan:
+          $ref: '#/components/schemas/PaymentPlan'
+          default: Annual
+        quoteId:
+          type: string
+          format: uuid
+        notes:
+          type: string
+
+    CancelPolicyRequest:
+      type: object
+      required:
+        - cancellationDate
+        - reason
+        - cancellationType
+      properties:
+        cancellationDate:
+          type: string
+          format: date
+        reason:
+          type: string
+          minLength: 1
+        cancellationType:
+          $ref: '#/components/schemas/CancellationType'
+
+    AddCoverageRequest:
+      type: object
+      required:
+        - code
+        - name
+        - premiumAmount
+      properties:
+        code:
+          type: string
+          maxLength: 20
+        name:
+          type: string
+          maxLength: 200
+        premiumAmount:
+          type: number
+          format: decimal
+          minimum: 0
+        description:
+          type: string
+        limitAmount:
+          type: number
+          format: decimal
+        deductibleAmount:
+          type: number
+          format: decimal
+        isOptional:
+          type: boolean
+          default: false
+
+    UpdateCoverageRequest:
+      type: object
+      required:
+        - name
+        - premiumAmount
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        premiumAmount:
+          type: number
+          format: decimal
+          minimum: 0
+        description:
+          type: string
+        limitAmount:
+          type: number
+          format: decimal
+        perOccurrenceLimit:
+          type: number
+          format: decimal
+        aggregateLimit:
+          type: number
+          format: decimal
+        deductibleAmount:
+          type: number
+          format: decimal
+
+    AddEndorsementRequest:
+      type: object
+      required:
+        - effectiveDate
+        - type
+        - description
+        - premiumChange
+      properties:
+        effectiveDate:
+          type: string
+          format: date
+        type:
+          type: string
+          maxLength: 100
+        description:
+          type: string
+        premiumChange:
+          type: number
+          format: decimal
+          description: Positive for additional premium, negative for return premium
+        notes:
+          type: string
+
+    RejectEndorsementRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+          maxLength: 500
+
+    # ============================================
+    # Quote Schemas
+    # ============================================
+    QuoteStatus:
+      type: string
+      enum:
+        - Draft
+        - Submitted
+        - Quoted
+        - Accepted
+        - Expired
+        - Cancelled
+
+    QuoteCarrierStatus:
+      type: string
+      enum:
+        - Pending
+        - Quoted
+        - Declined
+        - Expired
+
+    QuoteDetail:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+        lineOfBusiness:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/QuoteStatus'
+        expiresAt:
+          type: string
+          format: date
+        acceptedCarrierId:
+          type: string
+          format: uuid
+          nullable: true
+        policyId:
+          type: string
+          format: uuid
+          nullable: true
+        notes:
+          type: string
+          nullable: true
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        carriers:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteCarrierResponse'
+
+    QuoteCarrierResponse:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        status:
+          $ref: '#/components/schemas/QuoteCarrierStatus'
+        premiumAmount:
+          type: number
+          format: decimal
+          nullable: true
+        premiumCurrency:
+          type: string
+          nullable: true
+        declinationReason:
+          type: string
+          nullable: true
+        conditions:
+          type: string
+          nullable: true
+        proposedCoverages:
+          type: string
+          nullable: true
+        respondedAt:
+          type: string
+          format: date-time
+          nullable: true
+        expiresAt:
+          type: string
+          format: date
+          nullable: true
+
+    QuoteSearchResult:
+      type: object
+      properties:
+        quotes:
+          type: array
+          items:
+            $ref: '#/components/schemas/QuoteSummary'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    QuoteSummary:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        clientId:
+          type: string
+          format: uuid
+        clientName:
+          type: string
+        lineOfBusiness:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        status:
+          $ref: '#/components/schemas/QuoteStatus'
+        expiresAt:
+          type: string
+          format: date
+        carrierCount:
+          type: integer
+        responseCount:
+          type: integer
+        lowestPremium:
+          type: number
+          format: decimal
+          nullable: true
+        createdAt:
+          type: string
+          format: date-time
+
+    QuoteSummaryStats:
+      type: object
+      properties:
+        totalQuotes:
+          type: integer
+        draftCount:
+          type: integer
+        submittedCount:
+          type: integer
+        quotedCount:
+          type: integer
+        acceptedCount:
+          type: integer
+        expiredCount:
+          type: integer
+        cancelledCount:
+          type: integer
+        averageQuotedPremium:
+          type: number
+          format: decimal
+          nullable: true
+
+    CreateQuoteRequest:
+      type: object
+      required:
+        - clientId
+        - lineOfBusiness
+        - effectiveDate
+        - expirationDate
+      properties:
+        clientId:
+          type: string
+          format: uuid
+        lineOfBusiness:
+          $ref: '#/components/schemas/LineOfBusiness'
+        effectiveDate:
+          type: string
+          format: date
+        expirationDate:
+          type: string
+          format: date
+        notes:
+          type: string
+          maxLength: 2000
+        expiresAt:
+          type: string
+          format: date
+
+    AddCarrierToQuoteRequest:
+      type: object
+      required:
+        - carrierId
+      properties:
+        carrierId:
+          type: string
+          format: uuid
+
+    RecordQuoteResponseRequest:
+      type: object
+      required:
+        - isQuoted
+      properties:
+        isQuoted:
+          type: boolean
+        premiumAmount:
+          type: number
+          format: decimal
+          minimum: 0.01
+          description: Required when isQuoted is true
+        premiumCurrency:
+          type: string
+          maxLength: 3
+          default: USD
+        conditions:
+          type: string
+          maxLength: 2000
+        proposedCoverages:
+          type: string
+        carrierExpiresAt:
+          type: string
+          format: date
+        declinationReason:
+          type: string
+          maxLength: 500
+          description: Optional when isQuoted is false
+
+    # ============================================
+    # Commission Schemas
+    # ============================================
+    StatementStatus:
+      type: string
+      enum:
+        - Received
+        - Reconciling
+        - Reconciled
+        - Disputed
+        - Paid
+
+    TransactionType:
+      type: string
+      enum:
+        - NewBusiness
+        - Renewal
+        - Endorsement
+        - Cancellation
+        - Chargeback
+
+    ScheduleListResult:
+      type: object
+      properties:
+        schedules:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommissionScheduleListItemDto'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    CommissionScheduleListItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        lineOfBusiness:
+          type: string
+        newBusinessRate:
+          type: number
+          format: decimal
+        renewalRate:
+          type: number
+          format: decimal
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+
+    CommissionScheduleDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        lineOfBusiness:
+          type: string
+        newBusinessRate:
+          type: number
+          format: decimal
+        renewalRate:
+          type: number
+          format: decimal
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+        isActive:
+          type: boolean
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    CreateScheduleRequest:
+      type: object
+      required:
+        - carrierId
+        - carrierName
+        - lineOfBusiness
+        - newBusinessRate
+        - renewalRate
+        - effectiveFrom
+      properties:
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        lineOfBusiness:
+          type: string
+        newBusinessRate:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Commission rate for new business (e.g. 0.15 for 15%)
+        renewalRate:
+          type: number
+          format: decimal
+          minimum: 0
+          description: Commission rate for renewals (e.g. 0.10 for 10%)
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+
+    UpdateScheduleRequest:
+      type: object
+      required:
+        - carrierName
+        - lineOfBusiness
+        - newBusinessRate
+        - renewalRate
+        - effectiveFrom
+      properties:
+        carrierName:
+          type: string
+        lineOfBusiness:
+          type: string
+        newBusinessRate:
+          type: number
+          format: decimal
+          minimum: 0
+        renewalRate:
+          type: number
+          format: decimal
+          minimum: 0
+        effectiveFrom:
+          type: string
+          format: date
+        effectiveTo:
+          type: string
+          format: date
+          nullable: true
+
+    StatementListResult:
+      type: object
+      properties:
+        statements:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommissionStatementListItemDto'
+        totalCount:
+          type: integer
+        pageNumber:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    CommissionStatementListItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        statementNumber:
+          type: string
+        periodMonth:
+          type: integer
+        periodYear:
+          type: integer
+        statementDate:
+          type: string
+          format: date
+        status:
+          type: string
+        totalPremium:
+          type: number
+          format: decimal
+        totalPremiumCurrency:
+          type: string
+        totalCommission:
+          type: number
+          format: decimal
+        totalCommissionCurrency:
+          type: string
+        lineItemCount:
+          type: integer
+        reconciledCount:
+          type: integer
+        disputedCount:
+          type: integer
+        receivedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+
+    CommissionStatementDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        statementNumber:
+          type: string
+        periodMonth:
+          type: integer
+        periodYear:
+          type: integer
+        statementDate:
+          type: string
+          format: date
+        status:
+          type: string
+        totalPremium:
+          type: number
+          format: decimal
+        totalPremiumCurrency:
+          type: string
+        totalCommission:
+          type: number
+          format: decimal
+        totalCommissionCurrency:
+          type: string
+        receivedAt:
+          type: string
+          format: date-time
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+        lineItems:
+          type: array
+          items:
+            $ref: '#/components/schemas/CommissionLineItemDto'
+        producerSplits:
+          type: array
+          items:
+            $ref: '#/components/schemas/ProducerSplitDto'
+
+    CommissionLineItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        policyId:
+          type: string
+          format: uuid
+          nullable: true
+        policyNumber:
+          type: string
+        insuredName:
+          type: string
+        lineOfBusiness:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        transactionType:
+          type: string
+        grossPremium:
+          type: number
+          format: decimal
+        grossPremiumCurrency:
+          type: string
+        commissionRate:
+          type: number
+          format: decimal
+        commissionAmount:
+          type: number
+          format: decimal
+        commissionAmountCurrency:
+          type: string
+        isReconciled:
+          type: boolean
+        reconciledAt:
+          type: string
+          format: date-time
+          nullable: true
+        disputeReason:
+          type: string
+          nullable: true
+
+    ProducerSplitDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        lineItemId:
+          type: string
+          format: uuid
+        producerName:
+          type: string
+        producerId:
+          type: string
+          format: uuid
+        splitPercentage:
+          type: number
+          format: decimal
+        splitAmount:
+          type: number
+          format: decimal
+        splitAmountCurrency:
+          type: string
+
+    CreateStatementRequest:
+      type: object
+      required:
+        - carrierId
+        - carrierName
+        - statementNumber
+        - periodMonth
+        - periodYear
+        - statementDate
+        - totalPremium
+        - totalPremiumCurrency
+        - totalCommission
+        - totalCommissionCurrency
+      properties:
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        statementNumber:
+          type: string
+        periodMonth:
+          type: integer
+          minimum: 1
+          maximum: 12
+        periodYear:
+          type: integer
+        statementDate:
+          type: string
+          format: date
+        totalPremium:
+          type: number
+          format: decimal
+        totalPremiumCurrency:
+          type: string
+          maxLength: 3
+        totalCommission:
+          type: number
+          format: decimal
+        totalCommissionCurrency:
+          type: string
+          maxLength: 3
+
+    AddLineItemRequest:
+      type: object
+      required:
+        - policyNumber
+        - insuredName
+        - lineOfBusiness
+        - effectiveDate
+        - transactionType
+        - grossPremium
+        - grossPremiumCurrency
+        - commissionRate
+        - commissionAmount
+        - commissionAmountCurrency
+      properties:
+        policyNumber:
+          type: string
+        insuredName:
+          type: string
+        lineOfBusiness:
+          type: string
+        effectiveDate:
+          type: string
+          format: date
+        transactionType:
+          $ref: '#/components/schemas/TransactionType'
+        grossPremium:
+          type: number
+          format: decimal
+        grossPremiumCurrency:
+          type: string
+          maxLength: 3
+        commissionRate:
+          type: number
+          format: decimal
+          description: Commission rate as a decimal (e.g. 0.15 for 15%)
+        commissionAmount:
+          type: number
+          format: decimal
+        commissionAmountCurrency:
+          type: string
+          maxLength: 3
+        policyId:
+          type: string
+          format: uuid
+          nullable: true
+          description: Optional link to an existing policy in the system
+
+    DisputeLineItemRequest:
+      type: object
+      required:
+        - reason
+      properties:
+        reason:
+          type: string
+          minLength: 1
+
+    AddProducerSplitRequest:
+      type: object
+      required:
+        - producerName
+        - producerId
+        - splitPercentage
+        - splitAmount
+        - splitAmountCurrency
+      properties:
+        producerName:
+          type: string
+        producerId:
+          type: string
+          format: uuid
+        splitPercentage:
+          type: number
+          format: decimal
+          description: Percentage of commission allocated to this producer (e.g. 50.0 for 50%)
+        splitAmount:
+          type: number
+          format: decimal
+        splitAmountCurrency:
+          type: string
+          maxLength: 3
+
+    UpdateStatementStatusRequest:
+      type: object
+      required:
+        - newStatus
+      properties:
+        newStatus:
+          $ref: '#/components/schemas/StatementStatus'
+
+    CommissionStatisticsDto:
+      type: object
+      properties:
+        totalStatements:
+          type: integer
+        receivedStatements:
+          type: integer
+        reconcilingStatements:
+          type: integer
+        reconciledStatements:
+          type: integer
+        paidStatements:
+          type: integer
+        disputedStatements:
+          type: integer
+        totalCommissionAmount:
+          type: number
+          format: decimal
+        totalPaidAmount:
+          type: number
+          format: decimal
+        totalDisputedAmount:
+          type: number
+          format: decimal
+        statementsByStatus:
+          type: object
+          additionalProperties:
+            type: integer
+          description: Map of status name to count
+        commissionByCarrier:
+          type: object
+          additionalProperties:
+            type: number
+            format: decimal
+          description: Map of carrier name to total commission amount
+
+    CommissionSummaryEntryDto:
+      type: object
+      properties:
+        carrierId:
+          type: string
+          format: uuid
+        carrierName:
+          type: string
+        periodMonth:
+          type: integer
+        periodYear:
+          type: integer
+        statementCount:
+          type: integer
+        totalPremium:
+          type: number
+          format: decimal
+        totalCommission:
+          type: number
+          format: decimal
+        totalPaid:
+          type: number
+          format: decimal
+        currency:
+          type: string
+
+    ProducerReportEntryDto:
+      type: object
+      properties:
+        producerId:
+          type: string
+          format: uuid
+        producerName:
+          type: string
+        periodMonth:
+          type: integer
+        periodYear:
+          type: integer
+        lineItemCount:
+          type: integer
+        totalSplitAmount:
+          type: number
+          format: decimal
+        averageSplitPercentage:
+          type: number
+          format: decimal
+        currency:
+          type: string
+
+    # ============================================
+    # Document Schemas
+    # ============================================
+    DocumentCategory:
+      type: string
+      enum:
+        - Policy
+        - Endorsement
+        - COI
+        - ClaimReport
+        - KYC
+        - Invoice
+        - Other
+
+    DocumentEntityType:
+      type: string
+      enum:
+        - Policy
+        - Client
+        - Claim
+        - Carrier
+        - General
+
+    TemplateType:
+      type: string
+      enum:
+        - CertificateOfInsurance
+        - PolicySummary
+
+    DocumentListItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        entityType:
+          $ref: '#/components/schemas/DocumentEntityType'
+        entityId:
+          type: string
+          format: uuid
+          nullable: true
+        fileName:
+          type: string
+        contentType:
+          type: string
+        fileSizeBytes:
+          type: integer
+          format: int64
+        category:
+          $ref: '#/components/schemas/DocumentCategory'
+        version:
+          type: integer
+        isArchived:
+          type: boolean
+        uploadedBy:
+          type: string
+        uploadedAt:
+          type: string
+          format: date-time
+
+    DocumentDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        entityType:
+          $ref: '#/components/schemas/DocumentEntityType'
+        entityId:
+          type: string
+          format: uuid
+          nullable: true
+        fileName:
+          type: string
+        contentType:
+          type: string
+        fileSizeBytes:
+          type: integer
+          format: int64
+        blobKey:
+          type: string
+        category:
+          $ref: '#/components/schemas/DocumentCategory'
+        version:
+          type: integer
+        isArchived:
+          type: boolean
+        uploadedBy:
+          type: string
+        description:
+          type: string
+          nullable: true
+        uploadedAt:
+          type: string
+          format: date-time
+
+    DocumentSearchResultDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentListItemDto'
+        totalCount:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    DocumentTemplateListItemDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        templateType:
+          $ref: '#/components/schemas/TemplateType'
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdAt:
+          type: string
+          format: date-time
+
+    DocumentTemplateDetailDto:
+      type: object
+      properties:
+        id:
+          type: string
+          format: uuid
+        tenantId:
+          type: string
+          format: uuid
+        name:
+          type: string
+        description:
+          type: string
+          nullable: true
+        templateType:
+          $ref: '#/components/schemas/TemplateType'
+        content:
+          type: string
+          description: Handlebars HTML template content
+        isActive:
+          type: boolean
+        version:
+          type: integer
+        createdBy:
+          type: string
+        createdAt:
+          type: string
+          format: date-time
+        updatedAt:
+          type: string
+          format: date-time
+
+    DocumentTemplateSearchResultDto:
+      type: object
+      properties:
+        items:
+          type: array
+          items:
+            $ref: '#/components/schemas/DocumentTemplateListItemDto'
+        totalCount:
+          type: integer
+        page:
+          type: integer
+        pageSize:
+          type: integer
+        totalPages:
+          type: integer
+
+    CreateDocumentTemplateRequest:
+      type: object
+      required:
+        - name
+        - templateType
+        - content
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        templateType:
+          $ref: '#/components/schemas/TemplateType'
+        content:
+          type: string
+          description: Handlebars HTML template content
+
+    UpdateDocumentTemplateRequest:
+      type: object
+      required:
+        - name
+        - content
+      properties:
+        name:
+          type: string
+          maxLength: 200
+        description:
+          type: string
+          maxLength: 1000
+        content:
+          type: string
+          description: Handlebars HTML template content
+
+    GenerateCOIRequest:
+      type: object
+      required:
+        - templateId
+        - policyId
+      properties:
+        templateId:
+          type: string
+          format: uuid
+          description: ID of an active CertificateOfInsurance template
+        policyId:
+          type: string
+          format: uuid
+          description: ID of the policy to pull data from

@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\BuildingBlocks\IBS.BuildingBlocks.Infrastructure\IBS.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\IBS.Commissions.Application\IBS.Commissions.Application.csproj" />
+    <ProjectReference Include="..\IBS.Commissions.Domain\IBS.Commissions.Domain.csproj" />
+  </ItemGroup>
+
+</Project>

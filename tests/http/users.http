@@ -1,0 +1,129 @@
+### Users API Endpoints
+### Base URL: https://localhost:7001/api/v1
+### Requires authentication - run auth.http login first
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### Login first to get auth token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+@adminUserId = {{loginRequest.response.body.userId}}
+
+### ============================================
+### User Queries
+### ============================================
+
+### Search all users
+GET {{baseUrl}}/users
+Authorization: {{authToken}}
+
+### Search users with query
+GET {{baseUrl}}/users?search=admin
+Authorization: {{authToken}}
+
+### Search users with pagination
+GET {{baseUrl}}/users?page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get user by ID
+GET {{baseUrl}}/users/{{adminUserId}}
+Authorization: {{authToken}}
+
+### ============================================
+### User Profile Management
+### ============================================
+
+### Update user profile
+PUT {{baseUrl}}/users/{{adminUserId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Admin",
+  "lastName": "User",
+  "title": "System Administrator",
+  "phoneNumber": "555-000-0001"
+}
+
+### ============================================
+### User Status Management
+### ============================================
+
+### Register a test user first
+# @name registerRequest
+POST {{baseUrl}}/auth/register
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "email": "testuser@test.com",
+  "password": "TestUser123!",
+  "firstName": "Test",
+  "lastName": "User"
+}
+
+@testUserId = {{registerRequest.response.body}}
+
+### Activate user
+POST {{baseUrl}}/users/{{testUserId}}/activate
+Authorization: {{authToken}}
+
+### Deactivate user
+POST {{baseUrl}}/users/{{testUserId}}/deactivate
+Authorization: {{authToken}}
+
+### ============================================
+### Role Assignment
+### ============================================
+
+### Assign role to user (use a valid roleId from GET /roles)
+POST {{baseUrl}}/users/{{testUserId}}/roles
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "roleId": "00000000-0000-0000-0000-000000000000"
+}
+
+### Remove role from user
+DELETE {{baseUrl}}/users/{{testUserId}}/roles/00000000-0000-0000-0000-000000000000
+Authorization: {{authToken}}
+
+### ============================================
+### Test Scenarios
+### ============================================
+
+### Get non-existent user (should fail with 404)
+GET {{baseUrl}}/users/00000000-0000-0000-0000-000000000099
+Authorization: {{authToken}}
+
+### Update user without auth (should fail with 401)
+PUT {{baseUrl}}/users/{{adminUserId}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Unauthorized",
+  "lastName": "Update"
+}
+
+### Update user with empty name (should fail with 400)
+PUT {{baseUrl}}/users/{{adminUserId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "",
+  "lastName": "User"
+}

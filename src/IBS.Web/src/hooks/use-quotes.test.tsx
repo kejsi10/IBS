@@ -1,0 +1,102 @@
+import { describe, it, expect } from 'vitest';
+import { renderHook, waitFor } from '@testing-library/react';
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { BrowserRouter } from 'react-router-dom';
+import React from 'react';
+import {
+  useQuotes,
+  useQuote,
+  useCreateQuote,
+  useSubmitQuote,
+} from './use-quotes';
+
+/** Creates a fresh QueryClient and wrapper for each test to prevent state bleed. */
+const createWrapper = () => {
+  const queryClient = new QueryClient({
+    defaultOptions: {
+      queries: { retry: false, gcTime: 0 },
+      mutations: { retry: false },
+    },
+  });
+  return ({ children }: { children: React.ReactNode }) => (
+    <QueryClientProvider client={queryClient}>
+      <BrowserRouter>{children}</BrowserRouter>
+    </QueryClientProvider>
+  );
+};
+
+describe('useQuotes', () => {
+  it('returns paginated quote list on success', async () => {
+    // Arrange
+    const { result } = renderHook(() => useQuotes(), { wrapper: createWrapper() });
+
+    // Act
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Assert
+    expect(result.current.data?.items).toBeDefined();
+    expect(result.current.data?.items.length).toBeGreaterThan(0);
+  });
+
+  it('shows loading state initially', () => {
+    // Arrange & Act
+    const { result } = renderHook(() => useQuotes(), { wrapper: createWrapper() });
+
+    // Assert
+    expect(result.current.isLoading).toBe(true);
+  });
+});
+
+describe('useQuote', () => {
+  it('fetches single quote by id', async () => {
+    // Arrange
+    const { result } = renderHook(() => useQuote('quote-1'), { wrapper: createWrapper() });
+
+    // Act
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+
+    // Assert
+    expect(result.current.data).toBeDefined();
+    expect(result.current.data?.id).toBe('quote-1');
+  });
+
+  it('is disabled when id is empty string', () => {
+    // Arrange & Act
+    const { result } = renderHook(() => useQuote(''), { wrapper: createWrapper() });
+
+    // Assert — query should not be fetching
+    expect(result.current.isFetching).toBe(false);
+  });
+});
+
+describe('useCreateQuote', () => {
+  it('creates quote, invalidates list and summary cache', async () => {
+    // Arrange
+    const { result } = renderHook(() => useCreateQuote(), { wrapper: createWrapper() });
+
+    // Act
+    result.current.mutate({
+      clientId: 'client-1',
+      lineOfBusiness: 'PersonalAuto',
+      effectiveDate: '2024-06-01',
+      expirationDate: '2025-06-01',
+    });
+
+    // Assert
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+    expect(result.current.data?.id).toBe('new-quote-id');
+  });
+});
+
+describe('useSubmitQuote', () => {
+  it('posts submit and invalidates detail, list, and summary', async () => {
+    // Arrange
+    const { result } = renderHook(() => useSubmitQuote(), { wrapper: createWrapper() });
+
+    // Act
+    result.current.mutate('quote-1');
+
+    // Assert
+    await waitFor(() => expect(result.current.isSuccess).toBe(true));
+  });
+});

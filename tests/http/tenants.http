@@ -1,0 +1,216 @@
+### Tenants API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### Variables (update after creating tenants)
+@newTenantId =
+@carrierId =
+
+### ============================================
+### Tenant CRUD Operations
+### ============================================
+
+### Search tenants (paginated)
+GET {{baseUrl}}/tenants?page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Search tenants by name
+GET {{baseUrl}}/tenants?search=Demo&page=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get tenant by ID
+GET {{baseUrl}}/tenants/{{tenantId}}
+Authorization: {{authToken}}
+
+### Create a new tenant
+# @name createTenantResponse
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "New Insurance Agency",
+  "subdomain": "newagency",
+  "subscriptionTier": "Professional"
+}
+
+### Store new tenant ID
+@newTenantId = {{createTenantResponse.response.body}}
+
+### Create tenant with Basic tier
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Budget Brokers",
+  "subdomain": "budget",
+  "subscriptionTier": "Basic"
+}
+
+### Create tenant with Enterprise tier
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Enterprise Solutions Inc",
+  "subdomain": "enterprise",
+  "subscriptionTier": "Enterprise"
+}
+
+### Update tenant
+PUT {{baseUrl}}/tenants/{{newTenantId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Updated Insurance Agency",
+  "settings": "{\"theme\": \"dark\", \"maxUsers\": 50}"
+}
+
+### ============================================
+### Tenant Status Transitions
+### ============================================
+
+### Suspend tenant
+POST {{baseUrl}}/tenants/{{newTenantId}}/suspend
+Authorization: {{authToken}}
+
+### Activate tenant (after suspension)
+POST {{baseUrl}}/tenants/{{newTenantId}}/activate
+Authorization: {{authToken}}
+
+### Cancel tenant subscription
+POST {{baseUrl}}/tenants/{{newTenantId}}/cancel
+Authorization: {{authToken}}
+
+### ============================================
+### Subscription Management
+### ============================================
+
+### Update subscription to Enterprise
+PUT {{baseUrl}}/tenants/{{newTenantId}}/subscription
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "subscriptionTier": "Enterprise"
+}
+
+### Update subscription to Basic
+PUT {{baseUrl}}/tenants/{{newTenantId}}/subscription
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "subscriptionTier": "Basic"
+}
+
+### ============================================
+### Carrier Management
+### ============================================
+
+### Add a carrier to tenant
+POST {{baseUrl}}/tenants/{{tenantId}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "carrierId": "00000000-0000-0000-0000-000000000010",
+  "agencyCode": "AGC-001",
+  "commissionRate": 0.15
+}
+
+### Add another carrier (no agency code)
+POST {{baseUrl}}/tenants/{{tenantId}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "carrierId": "00000000-0000-0000-0000-000000000020",
+  "commissionRate": 0.12
+}
+
+### Remove carrier from tenant
+DELETE {{baseUrl}}/tenants/{{tenantId}}/carriers/00000000-0000-0000-0000-000000000010
+Authorization: {{authToken}}
+
+### ============================================
+### Validation Test Cases
+### ============================================
+
+### Missing required name
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "",
+  "subdomain": "valid",
+  "subscriptionTier": "Basic"
+}
+
+### Invalid subdomain (too short)
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Agency",
+  "subdomain": "ab",
+  "subscriptionTier": "Basic"
+}
+
+### Invalid subdomain (uppercase)
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Agency",
+  "subdomain": "InvalidSubdomain",
+  "subscriptionTier": "Basic"
+}
+
+### Invalid subscription tier
+POST {{baseUrl}}/tenants
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "name": "Test Agency",
+  "subdomain": "valid",
+  "subscriptionTier": "Invalid"
+}
+
+### Invalid commission rate (> 1)
+POST {{baseUrl}}/tenants/{{tenantId}}/carriers
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "carrierId": "00000000-0000-0000-0000-000000000030",
+  "commissionRate": 1.5
+}

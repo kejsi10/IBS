@@ -1,0 +1,32 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net8.0</TargetFramework>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="MailKit" Version="4.3.0" />
+    <PackageReference Include="Microsoft.EntityFrameworkCore.Design" Version="8.0.2">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="Microsoft.Extensions.Caching.StackExchangeRedis" Version="8.0.2" />
+    <PackageReference Include="Microsoft.Extensions.Configuration.Json" Version="8.0.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\BuildingBlocks\IBS.BuildingBlocks.Infrastructure\IBS.BuildingBlocks.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Carriers\IBS.Carriers.Infrastructure\IBS.Carriers.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Clients\IBS.Clients.Infrastructure\IBS.Clients.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Identity\IBS.Identity.Infrastructure\IBS.Identity.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Claims\IBS.Claims.Infrastructure\IBS.Claims.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Commissions\IBS.Commissions.Infrastructure\IBS.Commissions.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Documents\IBS.Documents.Infrastructure\IBS.Documents.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Policies\IBS.Policies.Infrastructure\IBS.Policies.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\PolicyAssistant\IBS.PolicyAssistant.Infrastructure\IBS.PolicyAssistant.Infrastructure.csproj" />
+    <ProjectReference Include="..\Contexts\Tenants\IBS.Tenants.Infrastructure\IBS.Tenants.Infrastructure.csproj" />
+  </ItemGroup>
+
+</Project>

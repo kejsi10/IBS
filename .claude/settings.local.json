@@ -1,0 +1,42 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(dotnet new:*)",
+      "Bash(dotnet sln:*)",
+      "Bash(dotnet build:*)",
+      "Bash(del \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Clients\\\\IBS.Clients.Domain\\\\Class1.cs\")",
+      "Bash(npm install:*)",
+      "Bash(npx tailwindcss:*)",
+      "Bash(./node_modules/.bin/tailwindcss:*)",
+      "Bash(node node_modules/tailwindcss/lib/cli.js:*)",
+      "Bash(npx tsc:*)",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Carriers\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Claims\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Clients\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Commissions\")",
+      "Bash(dir \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\\\\Documents\")",
+      "Bash(dir:*)",
+      "Bash(dotnet test:*)",
+      "Bash(dotnet restore:*)",
+      "Bash(npm test:*)",
+      "Bash(npm run build:*)",
+      "Bash(pushd:*)",
+      "Bash(dotnet add package:*)",
+      "Bash(dotnet ef migrations:*)",
+      "Bash(dotnet ef database update:*)",
+      "Bash(npx eslint:*)",
+      "Bash(npm run lint)",
+      "Bash(npm run test:ci:*)",
+      "Bash(ls -la \"C:\\\\git\\\\IBS\\\\src\\\\Contexts\"\" | grep -E \"^d \")",
+      "Bash(grep:*)",
+      "Bash(while read f)",
+      "Bash(do sed -i 's/using IBS\\\\.Claims\\\\.Domain\\\\.ValueObjects;/using IBS.BuildingBlocks.Domain.ValueObjects;\\\\nusing IBS.Claims.Domain.ValueObjects;/' \"$f\")",
+      "Bash(done)",
+      "Bash(do sed -i 's/using IBS\\\\.Commissions\\\\.Domain\\\\.ValueObjects;/using IBS.BuildingBlocks.Domain.ValueObjects;\\\\nusing IBS.Commissions.Domain.ValueObjects;/' \"$f\")",
+      "Bash(node -e:*)",
+      "WebSearch"
+    ]
+  }
+}

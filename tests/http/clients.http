@@ -1,0 +1,476 @@
+### Clients API Endpoints
+### Base URL: https://localhost:7001/api/v1
+
+@baseUrl = https://localhost:7001/api/v1
+@contentType = application/json
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### ============================================
+### Authentication (get token first)
+### ============================================
+
+### Login to get JWT token
+# @name loginRequest
+POST {{baseUrl}}/auth/login
+Content-Type: {{contentType}}
+X-Tenant-Id: {{tenantId}}
+
+{
+  "email": "admin@test.com",
+  "password": "Admin123!"
+}
+
+### Store the token
+@authToken = Bearer {{loginRequest.response.body.accessToken}}
+
+### Variables (update after creating clients)
+@individualClientId =
+@businessClientId =
+@contactId =
+@addressId =
+
+### ============================================
+### Individual Client CRUD Operations
+### ============================================
+
+### Create an individual client
+# @name createIndividualResponse
+POST {{baseUrl}}/clients/individual
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "middleName": "William",
+  "suffix": "Jr.",
+  "dateOfBirth": "1985-03-15",
+  "email": "john.doe@example.com",
+  "phone": "555-123-4567"
+}
+
+### Store individual client ID
+@individualClientId = {{createIndividualResponse.response.body.id}}
+
+### Get individual client by ID
+GET {{baseUrl}}/clients/{{individualClientId}}
+Authorization: {{authToken}}
+
+### Update individual client
+PUT {{baseUrl}}/clients/{{individualClientId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "John",
+  "lastName": "Doe",
+  "middleName": "William",
+  "suffix": "Jr.",
+  "dateOfBirth": "1985-03-15",
+  "email": "john.doe.updated@example.com",
+  "phone": "555-987-6543"
+}
+
+### Create individual client with minimal fields
+POST {{baseUrl}}/clients/individual
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith"
+}
+
+### ============================================
+### Business Client CRUD Operations
+### ============================================
+
+### Create a business client
+# @name createBusinessResponse
+POST {{baseUrl}}/clients/business
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessName": "Acme Corporation",
+  "businessType": "Corporation",
+  "dbaName": "Acme Co",
+  "industry": "Technology",
+  "yearEstablished": 2010,
+  "numberOfEmployees": 150,
+  "annualRevenue": 5000000,
+  "website": "https://acme.com",
+  "email": "info@acme.com",
+  "phone": "555-999-0000"
+}
+
+### Store business client ID
+@businessClientId = {{createBusinessResponse.response.body.id}}
+
+### Get business client by ID
+GET {{baseUrl}}/clients/{{businessClientId}}
+Authorization: {{authToken}}
+
+### Update business client
+PUT {{baseUrl}}/clients/{{businessClientId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessName": "Acme Corporation Inc.",
+  "businessType": "Corporation",
+  "dbaName": "Acme",
+  "industry": "Technology & Software",
+  "yearEstablished": 2010,
+  "numberOfEmployees": 175,
+  "annualRevenue": 7500000,
+  "website": "https://acmecorp.com",
+  "email": "contact@acmecorp.com",
+  "phone": "555-888-1111"
+}
+
+### Create business client with minimal fields
+POST {{baseUrl}}/clients/business
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessName": "Small Business LLC",
+  "businessType": "LLC"
+}
+
+### ============================================
+### Client List & Search
+### ============================================
+
+### Get all clients (paginated)
+GET {{baseUrl}}/clients?pageNumber=1&pageSize=10
+Authorization: {{authToken}}
+
+### Get clients with sorting
+GET {{baseUrl}}/clients?pageNumber=1&pageSize=10&sortBy=createdAt&sortDirection=desc
+Authorization: {{authToken}}
+
+### Search clients by name
+GET {{baseUrl}}/clients?searchTerm=Acme
+Authorization: {{authToken}}
+
+### Filter by client type
+GET {{baseUrl}}/clients?clientType=Individual
+Authorization: {{authToken}}
+
+### Filter by client type (Business)
+GET {{baseUrl}}/clients?clientType=Business
+Authorization: {{authToken}}
+
+### Filter by status
+GET {{baseUrl}}/clients?status=Active
+Authorization: {{authToken}}
+
+### Combined search and filter
+GET {{baseUrl}}/clients?searchTerm=John&clientType=Individual&status=Active&pageNumber=1&pageSize=25
+Authorization: {{authToken}}
+
+### ============================================
+### Client Status Management
+### ============================================
+
+### Deactivate client
+POST {{baseUrl}}/clients/{{individualClientId}}/deactivate
+Authorization: {{authToken}}
+
+### Reactivate client
+POST {{baseUrl}}/clients/{{individualClientId}}/reactivate
+Authorization: {{authToken}}
+
+### ============================================
+### Contact Operations (Business Clients)
+### ============================================
+
+### Add a contact to business client
+# @name addContactResponse
+POST {{baseUrl}}/clients/{{businessClientId}}/contacts
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith",
+  "title": "CEO",
+  "email": "jane.smith@acme.com",
+  "phone": "555-111-2222",
+  "isPrimary": true
+}
+
+### Store contact ID
+@contactId = {{addContactResponse.response.body.id}}
+
+### Add another contact
+POST {{baseUrl}}/clients/{{businessClientId}}/contacts
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Bob",
+  "lastName": "Johnson",
+  "title": "CFO",
+  "email": "bob.johnson@acme.com",
+  "phone": "555-333-4444",
+  "isPrimary": false
+}
+
+### Update contact
+PUT {{baseUrl}}/clients/{{businessClientId}}/contacts/{{contactId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Jane",
+  "lastName": "Smith-Jones",
+  "title": "CEO & President",
+  "email": "jane@acme.com",
+  "phone": "555-111-9999",
+  "isPrimary": true
+}
+
+### Set primary contact
+PATCH {{baseUrl}}/clients/{{businessClientId}}/contacts/{{contactId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "isPrimary": true
+}
+
+### Remove contact
+DELETE {{baseUrl}}/clients/{{businessClientId}}/contacts/{{contactId}}
+Authorization: {{authToken}}
+
+### ============================================
+### Address Operations
+### ============================================
+
+### Add a mailing address
+# @name addAddressResponse
+POST {{baseUrl}}/clients/{{businessClientId}}/addresses
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "addressType": "Mailing",
+  "streetLine1": "123 Main Street",
+  "streetLine2": "Suite 500",
+  "city": "San Francisco",
+  "state": "CA",
+  "postalCode": "94105",
+  "country": "USA",
+  "isPrimary": true
+}
+
+### Store address ID
+@addressId = {{addAddressResponse.response.body.id}}
+
+### Add a physical address
+POST {{baseUrl}}/clients/{{businessClientId}}/addresses
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "addressType": "Physical",
+  "streetLine1": "456 Oak Avenue",
+  "city": "San Francisco",
+  "state": "CA",
+  "postalCode": "94110",
+  "country": "USA",
+  "isPrimary": false
+}
+
+### Add a billing address
+POST {{baseUrl}}/clients/{{individualClientId}}/addresses
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "addressType": "Billing",
+  "streetLine1": "789 Elm Street",
+  "city": "Los Angeles",
+  "state": "CA",
+  "postalCode": "90001",
+  "country": "USA",
+  "isPrimary": true
+}
+
+### Update address
+PUT {{baseUrl}}/clients/{{businessClientId}}/addresses/{{addressId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "addressType": "Mailing",
+  "streetLine1": "123 Main Street",
+  "streetLine2": "Suite 600",
+  "city": "San Francisco",
+  "state": "CA",
+  "postalCode": "94105",
+  "country": "USA",
+  "isPrimary": true
+}
+
+### Set primary address
+PATCH {{baseUrl}}/clients/{{businessClientId}}/addresses/{{addressId}}
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "isPrimary": true
+}
+
+### Remove address
+DELETE {{baseUrl}}/clients/{{businessClientId}}/addresses/{{addressId}}
+Authorization: {{authToken}}
+
+### ============================================
+### Communication Log Operations
+### ============================================
+
+### Log an email communication
+POST {{baseUrl}}/clients/{{businessClientId}}/communications
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "communicationType": "Email",
+  "subject": "Policy Renewal Reminder",
+  "notes": "Sent automated renewal reminder email to client. Policy expires in 30 days."
+}
+
+### Log a phone call
+POST {{baseUrl}}/clients/{{businessClientId}}/communications
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "communicationType": "Phone",
+  "subject": "Follow-up Call",
+  "notes": "Discussed policy options and answered questions about coverage limits. Client requested a quote for increased liability limits."
+}
+
+### Log an in-person meeting
+POST {{baseUrl}}/clients/{{businessClientId}}/communications
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "communicationType": "Meeting",
+  "subject": "Annual Policy Review",
+  "notes": "Met with client to review all active policies. Identified gaps in coverage for new equipment purchases."
+}
+
+### Log a text communication
+POST {{baseUrl}}/clients/{{individualClientId}}/communications
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "communicationType": "Text",
+  "subject": "VIP Client Note",
+  "notes": "High-value client referred by existing customer. Provide premium service and fast response times."
+}
+
+### ============================================
+### Client Related Data
+### ============================================
+
+### Get client policies
+GET {{baseUrl}}/clients/{{businessClientId}}/policies
+Authorization: {{authToken}}
+
+### Get client claims
+GET {{baseUrl}}/clients/{{businessClientId}}/claims
+Authorization: {{authToken}}
+
+### Get client documents
+GET {{baseUrl}}/clients/{{businessClientId}}/documents
+Authorization: {{authToken}}
+
+### Get client communications
+GET {{baseUrl}}/clients/{{businessClientId}}/communications
+Authorization: {{authToken}}
+
+### ============================================
+### Delete Client
+### ============================================
+
+### Delete individual client
+DELETE {{baseUrl}}/clients/{{individualClientId}}
+Authorization: {{authToken}}
+
+### Delete business client
+DELETE {{baseUrl}}/clients/{{businessClientId}}
+Authorization: {{authToken}}
+
+### ============================================
+### Validation Test Cases
+### ============================================
+
+### Missing required field (firstName for Individual)
+POST {{baseUrl}}/clients/individual
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "lastName": "Doe"
+}
+
+### Missing required field (businessName for Business)
+POST {{baseUrl}}/clients/business
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessType": "LLC"
+}
+
+### Invalid email format
+POST {{baseUrl}}/clients/individual
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "email": "invalid-email"
+}
+
+### Future date of birth
+POST {{baseUrl}}/clients/individual
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "firstName": "Test",
+  "lastName": "User",
+  "dateOfBirth": "2099-01-01"
+}
+
+### Invalid year established (future)
+POST {{baseUrl}}/clients/business
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessName": "Future Corp",
+  "businessType": "Corporation",
+  "yearEstablished": 2099
+}
+
+### Negative employees count
+POST {{baseUrl}}/clients/business
+Authorization: {{authToken}}
+Content-Type: {{contentType}}
+
+{
+  "businessName": "Bad Data Corp",
+  "businessType": "LLC",
+  "numberOfEmployees": -5
+}

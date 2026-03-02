@@ -1,0 +1,210 @@
+### Claims API Tests
+### Prerequisites: Run auth.http first to get a token
+
+@baseUrl = https://localhost:7001/api/v1
+@token = {{auth_token}}
+@tenantId = 00000000-0000-0000-0000-000000000001
+
+### Get Claims (paginated)
+GET {{baseUrl}}/claims?Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get Claims by Status
+GET {{baseUrl}}/claims?Status=FNOL&Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get Claims by Policy
+GET {{baseUrl}}/claims?PolicyId=00000000-0000-0000-0000-000000000010&Page=1&PageSize=20
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Get Claim Statistics
+GET {{baseUrl}}/claims/statistics
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Create Claim (FNOL)
+POST {{baseUrl}}/claims
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "policyId": "00000000-0000-0000-0000-000000000010",
+  "clientId": "00000000-0000-0000-0000-000000000005",
+  "lossDate": "2024-03-15T10:30:00Z",
+  "reportedDate": "2024-03-16T09:00:00Z",
+  "lossType": "PropertyDamage",
+  "lossDescription": "Water damage from burst pipe in main office area. Affecting carpet, drywall, and several workstations.",
+  "estimatedLossAmount": 50000,
+  "estimatedLossCurrency": "USD"
+}
+
+### Get Claim by ID
+@claimId = REPLACE_WITH_CLAIM_ID
+GET {{baseUrl}}/claims/{{claimId}}
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Acknowledge Claim
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Acknowledged"
+}
+
+### Assign Adjuster
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Assigned",
+  "adjusterId": "ADJ-001"
+}
+
+### Start Investigation
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "UnderInvestigation"
+}
+
+### Evaluate
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Evaluation"
+}
+
+### Approve Claim
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Approved",
+  "claimAmount": 45000,
+  "claimAmountCurrency": "USD"
+}
+
+### Deny Claim
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Denied",
+  "denialReason": "Loss is not covered under current policy terms."
+}
+
+### Move to Settlement
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Settlement"
+}
+
+### Close Claim
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "Closed",
+  "closureReason": "All payments settled and claim resolved."
+}
+
+### Reopen Claim
+PUT {{baseUrl}}/claims/{{claimId}}/status
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "newStatus": "UnderInvestigation"
+}
+
+### Add Note
+POST {{baseUrl}}/claims/{{claimId}}/notes
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "content": "Initial inspection completed. Damage consistent with water intrusion from burst pipe. Photographs taken and documented.",
+  "isInternal": false
+}
+
+### Add Internal Note
+POST {{baseUrl}}/claims/{{claimId}}/notes
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "content": "Client may have had pre-existing water damage issue. Need to verify policy terms.",
+  "isInternal": true
+}
+
+### Set Reserve
+POST {{baseUrl}}/claims/{{claimId}}/reserves
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "reserveType": "Indemnity",
+  "amount": 50000,
+  "currency": "USD",
+  "notes": "Initial reserve based on preliminary damage assessment."
+}
+
+### Authorize Payment
+POST {{baseUrl}}/claims/{{claimId}}/payments
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "paymentType": "Indemnity",
+  "amount": 25000,
+  "currency": "USD",
+  "payeeName": "ABC Restoration Services",
+  "paymentDate": "2024-04-01",
+  "checkNumber": "CHK-10001"
+}
+
+### Issue Payment
+@paymentId = REPLACE_WITH_PAYMENT_ID
+PUT {{baseUrl}}/claims/{{claimId}}/payments/{{paymentId}}/issue
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+
+### Void Payment
+PUT {{baseUrl}}/claims/{{claimId}}/payments/{{paymentId}}/void
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "reason": "Payment was issued to incorrect payee. Reissuing to correct entity."
+}
