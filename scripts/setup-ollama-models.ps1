@@ -24,12 +24,8 @@ if (-not $ready) {
     exit 1
 }
 
-Write-Host "Pulling qwen2.5-coder:7b (code model for template editing and PDF import)..." -ForegroundColor Cyan
-docker exec $Container ollama pull qwen2.5-coder:7b
-if ($LASTEXITCODE -ne 0) { Write-Error "Failed to pull qwen2.5-coder:7b"; exit 1 }
-
-Write-Host "Pulling llama3.1:8b (chat model for policy assistant)..." -ForegroundColor Cyan
-docker exec $Container ollama pull llama3.1:8b
-if ($LASTEXITCODE -ne 0) { Write-Error "Failed to pull llama3.1:8b"; exit 1 }
+Write-Host "Pulling qwen2.5:3b (model for template editing, PDF import, and policy assistant chat)..." -ForegroundColor Cyan
+docker exec $Container ollama pull qwen2.5:3b
+if ($LASTEXITCODE -ne 0) { Write-Error "Failed to pull qwen2.5:3b"; exit 1 }
 
 Write-Host "All models ready. AI document features are available." -ForegroundColor Green

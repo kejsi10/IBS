@@ -15,7 +15,7 @@ public sealed class OllamaClient(HttpClient httpClient) : IOllamaClient
     /// <inheritdoc />
     public async Task<string> GenerateAsync(string model, string prompt, CancellationToken ct)
     {
-        var body = new { model, prompt, stream = false };
+        var body = new { model, prompt, stream = false, think = false };
         return await PostAndExtractResponseAsync(body, ct);
     }
 
@@ -26,7 +26,7 @@ public sealed class OllamaClient(HttpClient httpClient) : IOllamaClient
         IReadOnlyList<string> base64Images,
         CancellationToken ct)
     {
-        var body = new { model, prompt, images = base64Images, stream = false };
+        var body = new { model, prompt, images = base64Images, stream = false, think = false };
         return await PostAndExtractResponseAsync(body, ct);
     }
 

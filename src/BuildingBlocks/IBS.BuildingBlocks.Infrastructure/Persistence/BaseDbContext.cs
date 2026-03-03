@@ -56,15 +56,26 @@ public abstract class BaseDbContext : DbContext
             // rowversion columns are auto-generated and cannot be written to).
             // Only aggregate roots get concurrency checking — child entities are
             // protected by their aggregate root's concurrency boundary.
-            if (typeof(Entity).IsAssignableFrom(entityType.ClrType))
+            // Use Entity<Guid> (the generic base) so the convention covers both
+            // aggregate roots (→ AggregateRoot<Guid> → Entity<Guid>) and child
+            // entities (→ Entity → Entity<Guid>) uniformly.
+            if (typeof(Entity<Guid>).IsAssignableFrom(entityType.ClrType))
             {
+                // Explicitly set the column type and value generation independently of
+                // IsConcurrencyToken so both aggregate roots and child entities always
+                // get a proper rowversion (timestamp) column. IsRowVersion() alone does
+                // not work here because a subsequent IsConcurrencyToken(false) causes
+                // the SQL Server provider to downgrade the inferred type to varbinary(max).
                 var prop = modelBuilder.Entity(entityType.ClrType)
                     .Property(nameof(Entity.RowVersion))
-                    .IsRowVersion();
+                    .ValueGeneratedOnAddOrUpdate()
+                    .HasColumnType("rowversion");
 
-                if (!typeof(IAggregateRoot).IsAssignableFrom(entityType.ClrType))
+                // Only aggregate roots participate in optimistic concurrency checks.
+                // Child entities are protected by their aggregate root's rowversion boundary.
+                if (typeof(IAggregateRoot).IsAssignableFrom(entityType.ClrType))
                 {
-                    prop.IsConcurrencyToken(false);
+                    prop.IsConcurrencyToken();
                 }
             }
         }
@@ -106,7 +117,7 @@ public abstract class BaseDbContext : DbContext
         {
             // 1. Fix misdetected entity states: new entities with pre-assigned Guids
             // are sometimes detected as Modified. Check for empty RowVersion to identify them.
-            if (entry.Entity is Entity && entry.State == EntityState.Modified)
+            if (entry.Entity is Entity<Guid> && entry.State == EntityState.Modified)
             {
                 if (entry.Property(nameof(Entity.RowVersion)).OriginalValue is byte[] rowVersion
                     && rowVersion.Length == 0)
@@ -116,7 +127,7 @@ public abstract class BaseDbContext : DbContext
             }
 
             // 2. Set audit properties
-            if (entry.Entity is Entity && (entry.State == EntityState.Added || entry.State == EntityState.Modified))
+            if (entry.Entity is Entity<Guid> && (entry.State == EntityState.Added || entry.State == EntityState.Modified))
             {
                 if (entry.State == EntityState.Added)
                 {

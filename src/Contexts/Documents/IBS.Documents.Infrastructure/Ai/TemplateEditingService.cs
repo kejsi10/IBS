@@ -5,7 +5,7 @@ namespace IBS.Documents.Infrastructure.Ai;
 
 /// <summary>
 /// Applies natural language edit instructions to an HTML/Handlebars template
-/// using Qwen2.5-Coder via Ollama. Handlebars expressions are preserved.
+/// using Qwen3.5 via Ollama. Handlebars expressions are preserved.
 /// </summary>
 public sealed class TemplateEditingService(
     IOllamaClient ollamaClient,

@@ -64,7 +64,7 @@ public sealed class OllamaOptions
     /// <summary>
     /// Gets or sets the model name to use for chat completions.
     /// </summary>
-    public string ChatModel { get; set; } = "llama3.1:8b";
+    public string ChatModel { get; set; } = "qwen2.5:3b";
 
     /// <summary>
     /// Gets or sets the HTTP request timeout in seconds.

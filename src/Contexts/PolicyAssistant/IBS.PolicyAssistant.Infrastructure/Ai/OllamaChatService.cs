@@ -7,7 +7,7 @@ namespace IBS.PolicyAssistant.Infrastructure.Ai;
 
 /// <summary>
 /// Ollama implementation of <see cref="IChatCompletionService"/> using the /api/chat endpoint.
-/// Used for local development with the llama3.1:8b model.
+/// Used for local development with the qwen2.5:3b model.
 /// </summary>
 public sealed class OllamaChatService(
     HttpClient httpClient,
@@ -24,7 +24,7 @@ public sealed class OllamaChatService(
             .Select(m => new { role = m.Role, content = m.Content })
             .ToArray();
 
-        var body = new { model, messages = requestMessages, stream = false };
+        var body = new { model, messages = requestMessages, stream = false, think = false };
 
         var json = JsonSerializer.Serialize(body, SerializerOptions);
         using var content = new StringContent(json, Encoding.UTF8, "application/json");

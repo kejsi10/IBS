@@ -23,7 +23,7 @@ public class TemplateImportServiceTests
     {
         var options = Options.Create(new OllamaOptions
         {
-            CoderModel = "qwen2.5-coder:7b"
+            CoderModel = "qwen2.5:3b"
         });
 
         _sut = new TemplateImportService(_ollamaClient, _pdfTextExtractor, options);
@@ -42,7 +42,7 @@ public class TemplateImportServiceTests
 
         // Assert
         await _ollamaClient.Received(1).GenerateAsync(
-            "qwen2.5-coder:7b",
+            "qwen2.5:3b",
             Arg.Is<string>(p => p.Contains(FakeExtractedText)),
             Arg.Any<CancellationToken>());
 

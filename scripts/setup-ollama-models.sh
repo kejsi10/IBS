@@ -12,10 +12,7 @@ until docker exec "$CONTAINER" ollama list >/dev/null 2>&1; do
     sleep 2
 done
 
-echo "Pulling qwen2.5-coder:7b (code model for template editing and PDF import)..."
-docker exec "$CONTAINER" ollama pull qwen2.5-coder:7b
-
-echo "Pulling llama3.1:8b (chat model for policy assistant)..."
-docker exec "$CONTAINER" ollama pull llama3.1:8b
+echo "Pulling qwen2.5:3b (model for template editing, PDF import, and policy assistant chat)..."
+docker exec "$CONTAINER" ollama pull qwen2.5:3b
 
 echo "All models ready. AI document features are available."

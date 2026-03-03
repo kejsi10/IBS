@@ -12,8 +12,8 @@ DECLARE @EmptyGuid UNIQUEIDENTIFIER = '00000000-0000-0000-0000-000000000000';
 -- Insert Demo Tenant
 IF NOT EXISTS (SELECT 1 FROM Tenants WHERE Id = @TenantId)
 BEGIN
-    INSERT INTO Tenants (Id, Name, Subdomain, Status, SubscriptionTier, CreatedAt, UpdatedAt, RowVersion)
-    VALUES (@TenantId, 'Demo Insurance Agency', 'demo', 'Active', 'Professional', @Now, @Now, 0x00000001);
+    INSERT INTO Tenants (Id, Name, Subdomain, Status, SubscriptionTier, CreatedAt, UpdatedAt)
+    VALUES (@TenantId, 'Demo Insurance Agency', 'demo', 'Active', 'Professional', @Now, @Now);
     PRINT 'Created Demo Tenant';
 END
 
@@ -38,10 +38,10 @@ DECLARE @UserUserId UNIQUEIDENTIFIER = NEWID();
 IF NOT EXISTS (SELECT 1 FROM Users WHERE NormalizedEmail = 'ADMIN@TEST.COM' AND TenantId = @TenantId)
 BEGIN
     SET @AdminUserId = NEWID();
-    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt)
     VALUES (@AdminUserId, @TenantId, 'admin@test.com', 'ADMIN@TEST.COM',
             '$2a$12$4a/gXy0K3izeVunxijt5lO1b8.1.KCJ9t9YVs9gF4o1xqrfyRi0aK',
-            'Admin', 'User', 'System Administrator', 'Active', 1, 0, @Now, @Now, 0x00000001);
+            'Admin', 'User', 'System Administrator', 'Active', 1, 0, @Now, @Now);
     PRINT 'Created Admin User';
 END
 ELSE
@@ -51,10 +51,10 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Users WHERE NormalizedEmail = 'AGENT@TEST.COM' AND TenantId = @TenantId)
 BEGIN
     SET @AgentUserId = NEWID();
-    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt)
     VALUES (@AgentUserId, @TenantId, 'agent@test.com', 'AGENT@TEST.COM',
             '$2a$12$Bjv8n4Bw63J9bjQV2czmz.tjJRv.Bc7.dpwdhU5Xw/9O89pS8/L.K',
-            'John', 'Agent', 'Insurance Agent', 'Active', 1, 0, @Now, @Now, 0x00000001);
+            'John', 'Agent', 'Insurance Agent', 'Active', 1, 0, @Now, @Now);
     PRINT 'Created Agent User';
 END
 ELSE
@@ -64,10 +64,10 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Users WHERE NormalizedEmail = 'USER@TEST.COM' AND TenantId = @TenantId)
 BEGIN
     SET @UserUserId = NEWID();
-    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Users (Id, TenantId, Email, NormalizedEmail, PasswordHash, FirstName, LastName, Title, Status, EmailConfirmed, FailedLoginAttempts, CreatedAt, UpdatedAt)
     VALUES (@UserUserId, @TenantId, 'user@test.com', 'USER@TEST.COM',
             '$2a$12$9/0DJOvWyClywet/eI6OXu25jDo4n9SBQup.QOj.7orcO8/b5Rdz6',
-            'Jane', 'Smith', 'Account Manager', 'Active', 1, 0, @Now, @Now, 0x00000001);
+            'Jane', 'Smith', 'Account Manager', 'Active', 1, 0, @Now, @Now);
     PRINT 'Created Regular User';
 END
 ELSE
@@ -118,31 +118,31 @@ DECLARE @PermCommissionsReconcile UNIQUEIDENTIFIER = '10000000-0000-0000-0000-00
 
 IF NOT EXISTS (SELECT 1 FROM Permissions WHERE Id = @PermClientsRead)
 BEGIN
-    INSERT INTO Permissions (Id, Name, Module, Description, CreatedAt, UpdatedAt, RowVersion) VALUES
-        (@PermClientsRead,    'clients:read',    'Clients',  'View clients',            @Now, @Now, 0x00000001),
-        (@PermClientsCreate,  'clients:create',  'Clients',  'Create clients',          @Now, @Now, 0x00000001),
-        (@PermClientsUpdate,  'clients:update',  'Clients',  'Update clients',          @Now, @Now, 0x00000001),
-        (@PermClientsDelete,  'clients:delete',  'Clients',  'Delete clients',          @Now, @Now, 0x00000001),
-        (@PermPoliciesRead,   'policies:read',   'Policies', 'View policies',           @Now, @Now, 0x00000001),
-        (@PermPoliciesCreate, 'policies:create', 'Policies', 'Create policies',         @Now, @Now, 0x00000001),
-        (@PermPoliciesBind,   'policies:bind',   'Policies', 'Bind policies',           @Now, @Now, 0x00000001),
-        (@PermPoliciesCancel, 'policies:cancel', 'Policies', 'Cancel policies',         @Now, @Now, 0x00000001),
-        (@PermClaimsRead,     'claims:read',     'Claims',   'View claims',             @Now, @Now, 0x00000001),
-        (@PermClaimsCreate,   'claims:create',   'Claims',   'Create claims',           @Now, @Now, 0x00000001),
-        (@PermClaimsUpdate,   'claims:update',   'Claims',   'Update claims',           @Now, @Now, 0x00000001),
-        (@PermClaimsClose,    'claims:close',    'Claims',   'Close claims',            @Now, @Now, 0x00000001),
-        (@PermQuotesRead,     'quotes:read',     'Quotes',   'View quotes',             @Now, @Now, 0x00000001),
-        (@PermQuotesCreate,   'quotes:create',   'Quotes',   'Create quotes',           @Now, @Now, 0x00000001),
-        (@PermQuotesSubmit,   'quotes:submit',   'Quotes',   'Submit quotes',           @Now, @Now, 0x00000001),
-        (@PermReportsView,    'reports:view',    'Reports',  'View reports',            @Now, @Now, 0x00000001),
-        (@PermReportsExport,  'reports:export',  'Reports',  'Export reports',          @Now, @Now, 0x00000001),
-        (@PermAdminUsers,     'admin:users',     'Admin',    'Manage users',            @Now, @Now, 0x00000001),
-        (@PermAdminSettings,  'admin:settings',  'Admin',    'Manage settings',         @Now, @Now, 0x00000001),
-        (@PermAdminCarriers,  'admin:carriers',  'Admin',    'Manage carriers',         @Now, @Now, 0x00000001),
-        (@PermCommissionsRead,      'commissions:read',      'Commissions', 'View commission schedules and statements',        @Now, @Now, 0x00000001),
-        (@PermCommissionsCreate,    'commissions:create',    'Commissions', 'Create commission schedules and statements',      @Now, @Now, 0x00000001),
-        (@PermCommissionsUpdate,    'commissions:update',    'Commissions', 'Update commission schedules and statements',      @Now, @Now, 0x00000001),
-        (@PermCommissionsReconcile, 'commissions:reconcile', 'Commissions', 'Reconcile and manage commission statements',      @Now, @Now, 0x00000001);
+    INSERT INTO Permissions (Id, Name, Module, Description, CreatedAt, UpdatedAt) VALUES
+        (@PermClientsRead,    'clients:read',    'Clients',  'View clients',            @Now, @Now),
+        (@PermClientsCreate,  'clients:create',  'Clients',  'Create clients',          @Now, @Now),
+        (@PermClientsUpdate,  'clients:update',  'Clients',  'Update clients',          @Now, @Now),
+        (@PermClientsDelete,  'clients:delete',  'Clients',  'Delete clients',          @Now, @Now),
+        (@PermPoliciesRead,   'policies:read',   'Policies', 'View policies',           @Now, @Now),
+        (@PermPoliciesCreate, 'policies:create', 'Policies', 'Create policies',         @Now, @Now),
+        (@PermPoliciesBind,   'policies:bind',   'Policies', 'Bind policies',           @Now, @Now),
+        (@PermPoliciesCancel, 'policies:cancel', 'Policies', 'Cancel policies',         @Now, @Now),
+        (@PermClaimsRead,     'claims:read',     'Claims',   'View claims',             @Now, @Now),
+        (@PermClaimsCreate,   'claims:create',   'Claims',   'Create claims',           @Now, @Now),
+        (@PermClaimsUpdate,   'claims:update',   'Claims',   'Update claims',           @Now, @Now),
+        (@PermClaimsClose,    'claims:close',    'Claims',   'Close claims',            @Now, @Now),
+        (@PermQuotesRead,     'quotes:read',     'Quotes',   'View quotes',             @Now, @Now),
+        (@PermQuotesCreate,   'quotes:create',   'Quotes',   'Create quotes',           @Now, @Now),
+        (@PermQuotesSubmit,   'quotes:submit',   'Quotes',   'Submit quotes',           @Now, @Now),
+        (@PermReportsView,    'reports:view',    'Reports',  'View reports',            @Now, @Now),
+        (@PermReportsExport,  'reports:export',  'Reports',  'Export reports',          @Now, @Now),
+        (@PermAdminUsers,     'admin:users',     'Admin',    'Manage users',            @Now, @Now),
+        (@PermAdminSettings,  'admin:settings',  'Admin',    'Manage settings',         @Now, @Now),
+        (@PermAdminCarriers,  'admin:carriers',  'Admin',    'Manage carriers',         @Now, @Now),
+        (@PermCommissionsRead,      'commissions:read',      'Commissions', 'View commission schedules and statements',        @Now, @Now),
+        (@PermCommissionsCreate,    'commissions:create',    'Commissions', 'Create commission schedules and statements',      @Now, @Now),
+        (@PermCommissionsUpdate,    'commissions:update',    'Commissions', 'Update commission schedules and statements',      @Now, @Now),
+        (@PermCommissionsReconcile, 'commissions:reconcile', 'Commissions', 'Reconcile and manage commission statements',      @Now, @Now);
     PRINT 'Created Permissions';
 END
 
@@ -156,10 +156,10 @@ DECLARE @UserRoleId UNIQUEIDENTIFIER = '20000000-0000-0000-0000-000000000003';
 -- System Roles
 IF NOT EXISTS (SELECT 1 FROM Roles WHERE Id = @AdminRoleId)
 BEGIN
-    INSERT INTO Roles (Id, TenantId, Name, NormalizedName, Description, IsSystemRole, CreatedAt, UpdatedAt, RowVersion) VALUES
-        (@AdminRoleId, NULL, 'Admin', 'ADMIN', 'Full system administrator with all permissions', 1, @Now, @Now, 0x00000001),
-        (@AgentRoleId, NULL, 'Agent', 'AGENT', 'Insurance agent with client and policy management', 1, @Now, @Now, 0x00000001),
-        (@UserRoleId,  NULL, 'User',  'USER',  'Basic user with read-only access', 1, @Now, @Now, 0x00000001);
+    INSERT INTO Roles (Id, TenantId, Name, NormalizedName, Description, IsSystemRole, CreatedAt, UpdatedAt) VALUES
+        (@AdminRoleId, NULL, 'Admin', 'ADMIN', 'Full system administrator with all permissions', 1, @Now, @Now),
+        (@AgentRoleId, NULL, 'Agent', 'AGENT', 'Insurance agent with client and policy management', 1, @Now, @Now),
+        (@UserRoleId,  NULL, 'User',  'USER',  'Basic user with read-only access', 1, @Now, @Now);
 
     -- Admin gets ALL permissions
     INSERT INTO RolePermissions (Id, RoleId, PermissionId, GrantedAt, CreatedAt, UpdatedAt) VALUES
@@ -367,9 +367,9 @@ DECLARE @Client5Id UNIQUEIDENTIFIER = NEWID();
 IF NOT EXISTS (SELECT 1 FROM Clients WHERE TenantId = @TenantId AND BusinessName = 'Acme Corporation')
 BEGIN
     SET @Client1Id = NEWID();
-    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, DbaName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, DbaName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt)
     VALUES (@Client1Id, @TenantId, 'Business', 'Acme Corporation', 'Acme Corp',
-            'info@acmecorp.com', '555-100-1000', 'Active', @AdminUserId, @Now, @Now, 0x00000001);
+            'info@acmecorp.com', '555-100-1000', 'Active', @AdminUserId, @Now, @Now);
 
     -- Contacts
     INSERT INTO Contacts (Id, ClientId, TenantId, FirstName, LastName, Email, Phone, Title, IsPrimary, CreatedAt, UpdatedAt)
@@ -392,9 +392,9 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Clients WHERE TenantId = @TenantId AND BusinessName = 'TechStart Inc')
 BEGIN
     SET @Client2Id = NEWID();
-    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, DbaName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, DbaName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt)
     VALUES (@Client2Id, @TenantId, 'Business', 'TechStart Inc', 'TechStart',
-            'contact@techstart.io', '555-200-2000', 'Active', @AdminUserId, @Now, @Now, 0x00000001);
+            'contact@techstart.io', '555-200-2000', 'Active', @AdminUserId, @Now, @Now);
 
     -- Contacts
     INSERT INTO Contacts (Id, ClientId, TenantId, FirstName, LastName, Email, Phone, Title, IsPrimary, CreatedAt, UpdatedAt)
@@ -415,9 +415,9 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Clients WHERE TenantId = @TenantId AND BusinessName = 'Green Construction LLC')
 BEGIN
     SET @Client3Id = NEWID();
-    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Clients (Id, TenantId, ClientType, BusinessName, Email, Phone, Status, CreatedBy, CreatedAt, UpdatedAt)
     VALUES (@Client3Id, @TenantId, 'Business', 'Green Construction LLC',
-            'office@greenconstruction.com', '555-300-3000', 'Active', @AdminUserId, @Now, @Now, 0x00000001);
+            'office@greenconstruction.com', '555-300-3000', 'Active', @AdminUserId, @Now, @Now);
 
     -- Contacts
     INSERT INTO Contacts (Id, ClientId, TenantId, FirstName, LastName, Email, Phone, Title, IsPrimary, CreatedAt, UpdatedAt)
@@ -438,9 +438,9 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Clients WHERE TenantId = @TenantId AND Email = 'john.smith@email.com')
 BEGIN
     SET @Client4Id = NEWID();
-    INSERT INTO Clients (Id, TenantId, ClientType, FirstName, LastName, Email, Phone, DateOfBirth, Status, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Clients (Id, TenantId, ClientType, FirstName, LastName, Email, Phone, DateOfBirth, Status, CreatedBy, CreatedAt, UpdatedAt)
     VALUES (@Client4Id, @TenantId, 'Individual', 'John', 'Smith',
-            'john.smith@email.com', '555-400-4000', '1985-03-15', 'Active', @AdminUserId, @Now, @Now, 0x00000001);
+            'john.smith@email.com', '555-400-4000', '1985-03-15', 'Active', @AdminUserId, @Now, @Now);
 
     -- Addresses
     INSERT INTO Addresses (Id, ClientId, TenantId, AddressType, StreetLine1, City, State, PostalCode, Country, IsPrimary, CreatedAt, UpdatedAt)
@@ -456,9 +456,9 @@ ELSE
 IF NOT EXISTS (SELECT 1 FROM Clients WHERE TenantId = @TenantId AND Email = 'maria.garcia@email.com')
 BEGIN
     SET @Client5Id = NEWID();
-    INSERT INTO Clients (Id, TenantId, ClientType, FirstName, LastName, Email, Phone, DateOfBirth, Status, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+    INSERT INTO Clients (Id, TenantId, ClientType, FirstName, LastName, Email, Phone, DateOfBirth, Status, CreatedBy, CreatedAt, UpdatedAt)
     VALUES (@Client5Id, @TenantId, 'Individual', 'Maria', 'Garcia',
-            'maria.garcia@email.com', '555-500-5000', '1990-07-22', 'Inactive', @AdminUserId, @Now, @Now, 0x00000001);
+            'maria.garcia@email.com', '555-500-5000', '1990-07-22', 'Inactive', @AdminUserId, @Now, @Now);
 
     PRINT 'Created Maria Garcia Client (Inactive)';
 END
@@ -501,11 +501,11 @@ BEGIN
         SET @Policy1Id = NEWID();
         INSERT INTO Policies (Id, TenantId, ClientId, CarrierId, PolicyNumber, LineOfBusiness, PolicyType,
                               Status, EffectiveDate, ExpirationDate, TotalPremium, PremiumCurrency, BillingType, PaymentPlan,
-                              CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+                              CreatedBy, CreatedAt, UpdatedAt)
         VALUES (@Policy1Id, @TenantId, @Client1Id, @Carrier1Id, 'POL-2024-0001', 'GeneralLiability',
                 'Commercial General Liability', 'Active',
                 DATEADD(MONTH, -6, CAST(GETDATE() AS DATE)), DATEADD(MONTH, 6, CAST(GETDATE() AS DATE)),
-                12500.00, 'USD', 'DirectBill', 'Annual', @AdminUserId, @Now, @Now, 0x00000001);
+                12500.00, 'USD', 'DirectBill', 'Annual', @AdminUserId, @Now, @Now);
 
         -- Coverages
         INSERT INTO Coverages (Id, PolicyId, Code, Name, LimitAmount, LimitCurrency, DeductibleAmount, DeductibleCurrency, PremiumAmount, PremiumCurrency, IsActive, CreatedAt, UpdatedAt)
@@ -526,11 +526,11 @@ BEGIN
         SET @Policy2Id = NEWID();
         INSERT INTO Policies (Id, TenantId, ClientId, CarrierId, PolicyNumber, LineOfBusiness, PolicyType,
                               Status, EffectiveDate, ExpirationDate, TotalPremium, PremiumCurrency, BillingType, PaymentPlan,
-                              CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+                              CreatedBy, CreatedAt, UpdatedAt)
         VALUES (@Policy2Id, @TenantId, @Client1Id, @Carrier1Id, 'POL-2024-0002', 'WorkersCompensation',
                 'Workers Compensation', 'Active',
                 DATEADD(MONTH, -3, CAST(GETDATE() AS DATE)), DATEADD(MONTH, 9, CAST(GETDATE() AS DATE)),
-                45000.00, 'USD', 'AgencyBill', 'Quarterly', @AdminUserId, @Now, @Now, 0x00000001);
+                45000.00, 'USD', 'AgencyBill', 'Quarterly', @AdminUserId, @Now, @Now);
 
         -- Coverages
         INSERT INTO Coverages (Id, PolicyId, Code, Name, LimitAmount, LimitCurrency, PremiumAmount, PremiumCurrency, IsActive, CreatedAt, UpdatedAt)
@@ -550,11 +550,11 @@ BEGIN
         SET @Policy3Id = NEWID();
         INSERT INTO Policies (Id, TenantId, ClientId, CarrierId, PolicyNumber, LineOfBusiness, PolicyType,
                               Status, EffectiveDate, ExpirationDate, TotalPremium, PremiumCurrency, BillingType, PaymentPlan,
-                              CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+                              CreatedBy, CreatedAt, UpdatedAt)
         VALUES (@Policy3Id, @TenantId, @Client2Id, @Carrier3Id, 'POL-2024-0003', 'CyberLiability',
                 'Cyber Liability', 'Active',
                 DATEADD(YEAR, -1, DATEADD(DAY, 15, CAST(GETDATE() AS DATE))), DATEADD(DAY, 15, CAST(GETDATE() AS DATE)),
-                8500.00, 'USD', 'DirectBill', 'Annual', @AdminUserId, @Now, @Now, 0x00000001);
+                8500.00, 'USD', 'DirectBill', 'Annual', @AdminUserId, @Now, @Now);
 
         -- Coverages
         INSERT INTO Coverages (Id, PolicyId, Code, Name, LimitAmount, LimitCurrency, DeductibleAmount, DeductibleCurrency, PremiumAmount, PremiumCurrency, IsActive, CreatedAt, UpdatedAt)
@@ -575,11 +575,11 @@ BEGIN
         SET @Policy4Id = NEWID();
         INSERT INTO Policies (Id, TenantId, ClientId, CarrierId, PolicyNumber, LineOfBusiness, PolicyType,
                               Status, EffectiveDate, ExpirationDate, TotalPremium, PremiumCurrency, BillingType, PaymentPlan,
-                              CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+                              CreatedBy, CreatedAt, UpdatedAt)
         VALUES (@Policy4Id, @TenantId, @Client3Id, @Carrier2Id, 'POL-2024-0004', 'GeneralLiability',
                 'Contractors General Liability', 'Draft',
                 DATEADD(MONTH, 1, CAST(GETDATE() AS DATE)), DATEADD(MONTH, 13, CAST(GETDATE() AS DATE)),
-                22000.00, 'USD', 'AgencyBill', 'Monthly', @AdminUserId, @Now, @Now, 0x00000001);
+                22000.00, 'USD', 'AgencyBill', 'Monthly', @AdminUserId, @Now, @Now);
 
         -- Coverages
         INSERT INTO Coverages (Id, PolicyId, Code, Name, LimitAmount, LimitCurrency, DeductibleAmount, DeductibleCurrency, PremiumAmount, PremiumCurrency, IsActive, CreatedAt, UpdatedAt)
@@ -600,12 +600,12 @@ BEGIN
         SET @Policy5Id = NEWID();
         INSERT INTO Policies (Id, TenantId, ClientId, CarrierId, PolicyNumber, LineOfBusiness, PolicyType,
                               Status, EffectiveDate, ExpirationDate, CancellationDate, CancellationType, CancellationReason,
-                              TotalPremium, PremiumCurrency, BillingType, PaymentPlan, CreatedBy, CreatedAt, UpdatedAt, RowVersion)
+                              TotalPremium, PremiumCurrency, BillingType, PaymentPlan, CreatedBy, CreatedAt, UpdatedAt)
         VALUES (@Policy5Id, @TenantId, @Client2Id, @Carrier1Id, 'POL-2023-0099', 'CommercialAuto',
                 'Commercial Auto', 'Cancelled',
                 DATEADD(YEAR, -1, CAST(GETDATE() AS DATE)), CAST(GETDATE() AS DATE),
                 DATEADD(MONTH, -2, CAST(GETDATE() AS DATE)), 'InsuredRequest', 'Client requested cancellation',
-                6500.00, 'USD', 'DirectBill', 'SemiAnnual', @AdminUserId, @Now, @Now, 0x00000001);
+                6500.00, 'USD', 'DirectBill', 'SemiAnnual', @AdminUserId, @Now, @Now);
 
         PRINT 'Created Cancelled Policy';
     END
@@ -963,7 +963,7 @@ BEGIN
     PRINT 'Created COI Template: Standard COI Template';
 
     -- Sample documents (metadata only; actual blobs would be in Azurite)
-    INSERT INTO Documents (Id, TenantId, EntityType, EntityId, FileName, ContentType, FileSizeBytes, BlobKey, Category, Version, IsArchived, UploadedBy, Description, CreatedAt, UpdatedAt)
+    INSERT INTO Documents (Id, TenantId, EntityType, EntityId, FileName, ContentType, FileSizeBytes, BlobKey, Category, Version, IsArchived, UploadedBy, UploadedAt, Description, CreatedAt, UpdatedAt)
     VALUES
     (
         NEWID(),
@@ -978,6 +978,7 @@ BEGIN
         1,
         0,
         'admin@test.com',
+        @Now,
         'Sample policy document',
         @Now,
         @Now
@@ -995,6 +996,7 @@ BEGIN
         1,
         0,
         'agent@test.com',
+        @Now,
         'Sample claim report',
         @Now,
         @Now

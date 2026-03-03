@@ -58,6 +58,8 @@ public sealed class SendMessageCommandHandler(
 
         // Get the AI response
         var aiResponse = await chatService.ChatAsync(chatMessages, cancellationToken);
+        if (string.IsNullOrWhiteSpace(aiResponse))
+            return Error.Validation("The AI model returned an empty response. Please try again.");
 
         // Persist the assistant response
         conversation.AddMessage("assistant", aiResponse);

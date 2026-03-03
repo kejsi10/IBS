@@ -22,7 +22,7 @@ public class TemplateEditingServiceTests
     {
         var options = Options.Create(new OllamaOptions
         {
-            CoderModel = "qwen2.5-coder:7b"
+            CoderModel = "qwen2.5:3b"
         });
 
         _sut = new TemplateEditingService(_ollamaClient, options);
@@ -47,7 +47,7 @@ public class TemplateEditingServiceTests
         await _sut.EditTemplateAsync(SampleTemplate, instruction, CancellationToken.None);
 
         // Assert
-        capturedModel.Should().Be("qwen2.5-coder:7b");
+        capturedModel.Should().Be("qwen2.5:3b");
         capturedPrompt.Should().Contain(SampleTemplate);
         capturedPrompt.Should().Contain(instruction);
     }

@@ -4,7 +4,7 @@ using Microsoft.Extensions.Options;
 namespace IBS.Documents.Infrastructure.Ai;
 
 /// <summary>
-/// Converts an uploaded PDF into an HTML/Handlebars COI template using qwen2.5-coder via Ollama.
+/// Converts an uploaded PDF into an HTML/Handlebars COI template using qwen3.5 via Ollama.
 /// Extracts text from the PDF with PdfPig and sends it to the coder model with a structured prompt.
 /// </summary>
 public sealed class TemplateImportService(
