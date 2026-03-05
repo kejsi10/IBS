@@ -4,6 +4,7 @@ using Microsoft.Extensions.Options;
 using OpenAI;
 using OpenAI.Chat;
 using AppChatMessage = IBS.PolicyAssistant.Application.Services.ChatMessage;
+using OaiChatMessage = OpenAI.Chat.ChatMessage;
 
 namespace IBS.PolicyAssistant.Infrastructure.Ai;
 
@@ -23,11 +24,11 @@ public sealed class AzureOpenAIChatService(IOptions<AzureOpenAIOptions> options)
         var client = new OpenAIClient(new ApiKeyCredential(_options.ApiKey), clientOptions);
         var chatClient = client.GetChatClient(_options.DeploymentName);
 
-        var sdkMessages = messages.Select<AppChatMessage, ChatMessage>(m => m.Role switch
+        var sdkMessages = messages.Select<AppChatMessage, OaiChatMessage>(m => m.Role switch
         {
-            "system" => ChatMessage.CreateSystemMessage(m.Content),
-            "assistant" => ChatMessage.CreateAssistantMessage(m.Content),
-            _ => ChatMessage.CreateUserMessage(m.Content)
+            "system" => OaiChatMessage.CreateSystemMessage(m.Content),
+            "assistant" => OaiChatMessage.CreateAssistantMessage(m.Content),
+            _ => OaiChatMessage.CreateUserMessage(m.Content)
         }).ToList();
 
         var response = await chatClient.CompleteChatAsync(sdkMessages, cancellationToken: ct);
