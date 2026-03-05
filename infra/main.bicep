@@ -39,6 +39,9 @@ param jwtSecretKey string
 @secure()
 param openAiApiKey string
 
+@description('Object ID of the CI service principal (from AZURE_CREDENTIALS) that runs deployments and secret rotation')
+param deployerPrincipalId string
+
 @description('Initial container image to deploy')
 param containerImage string = 'mcr.microsoft.com/dotnet/samples:aspnetapp'
 
@@ -112,6 +115,7 @@ module keyVault 'modules/key-vault.bicep' = {
     environment: environment
     prefix: prefix
     containerAppPrincipalId: managedIdentity.properties.principalId
+    deployerPrincipalId: deployerPrincipalId
     sqlConnectionString: 'Server=tcp:${sql.outputs.sqlServerFqdn},1433;Initial Catalog=${sql.outputs.databaseName};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
     jwtSecretKey: jwtSecretKey
     azureOpenAiApiKey: openAiApiKey

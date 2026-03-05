@@ -103,10 +103,32 @@ jobs:
     needs: [build-push, migrate]
 
     steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
       - name: Azure Login
         uses: azure/login@v2
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
+
+      - name: Get deployer principal ID
+        id: deployer
+        run: |
+          CLIENT_ID=$(az account show --query user.name -o tsv)
+          OID=$(az ad sp show --id "$CLIENT_ID" --query id -o tsv)
+          echo "oid=$OID" >> $GITHUB_OUTPUT
+
+      - name: Apply infra changes (KV role assignment for deployer)
+        run: >
+          az deployment group create
+          --resource-group ${{ secrets.AZURE_RESOURCE_GROUP }}
+          --template-file infra/main.bicep
+          --parameters
+          sqlAdminPassword="${{ secrets.SQL_ADMIN_PASSWORD }}"
+          jwtSecretKey="${{ secrets.JWT_SECRET_KEY }}"
+          openAiApiKey="${{ secrets.OPENAI_API_KEY }}"
+          deployerPrincipalId="${{ steps.deployer.outputs.oid }}"
+          containerImage="${{ needs.build-push.outputs.image_full }}"
 
       - name: Sync OpenAI API key to Key Vault
         run: >

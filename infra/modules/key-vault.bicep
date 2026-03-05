@@ -15,6 +15,9 @@ param prefix string
 @description('Object ID of the Container App managed identity to grant secrets access')
 param containerAppPrincipalId string
 
+@description('Object ID of the deployer (CI service principal) to grant Key Vault Secrets Officer for secret rotation')
+param deployerPrincipalId string
+
 @description('SQL connection string to store as secret')
 @secure()
 param sqlConnectionString string
@@ -27,8 +30,11 @@ param jwtSecretKey string
 @secure()
 param azureOpenAiApiKey string
 
-// Key Vault Secrets User role definition ID (built-in)
+// Key Vault Secrets User role definition ID (built-in) — read-only, for the Container App MI
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
+
+// Key Vault Secrets Officer role definition ID (built-in) — read+write, for the CI deployer SP
+var keyVaultSecretsOfficerRoleId = 'b86a8fe4-44ce-4948-aee5-eccb2c155cd7'
 
 resource keyVault 'Microsoft.KeyVault/vaults@2023-07-01' = {
   name: '${prefix}-kv-${environment}'
@@ -53,6 +59,17 @@ resource kvRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' =
   properties: {
     roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsUserRoleId)
     principalId: containerAppPrincipalId
+    principalType: 'ServicePrincipal'
+  }
+}
+
+// Grant the CI deployer service principal write access to rotate secrets
+resource kvDeployerRoleAssignment 'Microsoft.Authorization/roleAssignments@2022-04-01' = {
+  name: guid(keyVault.id, deployerPrincipalId, keyVaultSecretsOfficerRoleId)
+  scope: keyVault
+  properties: {
+    roleDefinitionId: subscriptionResourceId('Microsoft.Authorization/roleDefinitions', keyVaultSecretsOfficerRoleId)
+    principalId: deployerPrincipalId
     principalType: 'ServicePrincipal'
   }
 }
