@@ -323,11 +323,17 @@ try
         });
     }
 
-    // Trust X-Forwarded-For / X-Forwarded-Proto from reverse proxies
-    app.UseForwardedHeaders(new ForwardedHeadersOptions
+    // Trust X-Forwarded-For / X-Forwarded-Proto from reverse proxies.
+    // KnownNetworks/KnownProxies are cleared so Azure Container Apps ingress
+    // (dynamic IP) is trusted to set X-Forwarded-Proto: https, preventing
+    // UseHttpsRedirection from redirecting POST requests as a GET (→ 404).
+    var forwardedOptions = new ForwardedHeadersOptions
     {
         ForwardedHeaders = ForwardedHeaders.XForwardedFor | ForwardedHeaders.XForwardedProto
-    });
+    };
+    forwardedOptions.KnownNetworks.Clear();
+    forwardedOptions.KnownProxies.Clear();
+    app.UseForwardedHeaders(forwardedOptions);
 
     // Security headers — applied to every response
     app.Use(async (ctx, next) =>
