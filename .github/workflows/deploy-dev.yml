@@ -105,6 +105,13 @@ jobs:
         with:
           creds: ${{ secrets.AZURE_CREDENTIALS }}
 
+      - name: Sync OpenAI API key to Key Vault
+        run: >
+          az keyvault secret set
+          --vault-name ibs-kv-dev
+          --name AzureOpenAiApiKey
+          --value "${{ secrets.OPENAI_API_KEY }}"
+
       - name: Update Container App image
         run: >
           az containerapp update

@@ -29,9 +29,6 @@ param keyVaultUri string
 @description('Resource ID of the user-assigned managed identity for Key Vault access')
 param managedIdentityId string
 
-@description('Client ID of the user-assigned managed identity')
-param managedIdentityClientId string
-
 @description('SQL connection string secret name in Key Vault')
 param sqlSecretName string = 'SqlConnectionString'
 

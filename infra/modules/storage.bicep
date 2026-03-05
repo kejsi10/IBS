@@ -44,4 +44,5 @@ resource documentsContainer 'Microsoft.Storage/storageAccounts/blobServices/cont
 }
 
 output storageAccountName string = storageAccount.name
-output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${environment().suffixes.storage}'
+#disable-next-line outputs-should-not-contain-secrets
+output storageConnectionString string = 'DefaultEndpointsProtocol=https;AccountName=${storageAccount.name};AccountKey=${storageAccount.listKeys().keys[0].value};EndpointSuffix=${az.environment().suffixes.storage}'

@@ -54,7 +54,7 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
   properties: {
     collation: 'SQL_Latin1_General_CP1_CI_AS'
     autoPauseDelay: 60  // Auto-pause after 60 minutes
-    minCapacity: '0.5'  // Minimum compute when running
+    minCapacity: json('0.5')  // Minimum compute when running
     zoneRedundant: false
     requestedBackupStorageRedundancy: 'Local'
   }
@@ -62,4 +62,3 @@ resource sqlDatabase 'Microsoft.Sql/servers/databases@2023-08-01-preview' = {
 
 output sqlServerFqdn string = sqlServer.properties.fullyQualifiedDomainName
 output databaseName string = sqlDatabase.name
-output connectionString string = 'Server=tcp:${sqlServer.properties.fullyQualifiedDomainName},1433;Initial Catalog=${sqlDatabase.name};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'

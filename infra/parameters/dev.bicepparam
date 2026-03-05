@@ -4,7 +4,7 @@ using '../main.bicep'
 // Sensitive values (sqlAdminPassword, jwtSecretKey) are injected at deploy time
 // via GitHub Actions secrets — do NOT commit real values here.
 
-param location = 'eastus'
+param location = 'westus2'
 param environment = 'dev'
 param prefix = 'ibs'
 param sqlAdminLogin = 'ibsadmin'
@@ -15,3 +15,4 @@ param containerImage = 'mcr.microsoft.com/dotnet/samples:aspnetapp'
 // --parameters jwtSecretKey=${{ secrets.JWT_SECRET_KEY }}
 param sqlAdminPassword = ''
 param jwtSecretKey = ''
+param openAiApiKey = ''

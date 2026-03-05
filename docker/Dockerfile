@@ -47,15 +47,49 @@ COPY . .
 WORKDIR /src/src/IBS.Api
 RUN dotnet publish -c Release -o /app/publish --no-restore
 
+# Download Playwright Chromium into a dedicated directory that will be copied to the runtime stage
+ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
+RUN dotnet tool install --global Microsoft.Playwright.CLI \
+    && /root/.dotnet/tools/playwright install chromium
+
 # Runtime stage
 FROM mcr.microsoft.com/dotnet/aspnet:8.0 AS runtime
 WORKDIR /app
 
-# Create non-root user for security
-RUN adduser --disabled-password --gecos "" appuser
-USER appuser
+# Install Chromium system dependencies
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    libnss3 \
+    libatk1.0-0 \
+    libatk-bridge2.0-0 \
+    libcups2 \
+    libdrm2 \
+    libxkbcommon0 \
+    libxcomposite1 \
+    libxdamage1 \
+    libxfixes3 \
+    libxrandr2 \
+    libgbm1 \
+    libpango-1.0-0 \
+    libpangocairo-1.0-0 \
+    libx11-xcb1 \
+    libxcb-dri3-0 \
+    fonts-liberation \
+    curl \
+    && rm -rf /var/lib/apt/lists/*
 
+# Create non-root user
+RUN adduser --disabled-password --gecos "" appuser
+
+# Copy published app and Playwright browsers
 COPY --from=build /app/publish .
+COPY --from=build /playwright-browsers /playwright-browsers
+
+# Grant appuser access
+RUN chown -R appuser:appuser /app /playwright-browsers
+
+ENV PLAYWRIGHT_BROWSERS_PATH=/playwright-browsers
+
+USER appuser
 
 # Expose port
 EXPOSE 8080

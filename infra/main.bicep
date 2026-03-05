@@ -23,6 +23,7 @@ param environment string = 'dev'
 @description('Short prefix for resource names')
 param prefix string = 'ibs'
 
+
 @description('SQL administrator login')
 param sqlAdminLogin string = 'ibsadmin'
 
@@ -33,6 +34,10 @@ param sqlAdminPassword string
 @description('JWT secret key — injected from GitHub Secrets')
 @secure()
 param jwtSecretKey string
+
+@description('OpenAI API key from platform.openai.com — injected from GitHub Secrets')
+@secure()
+param openAiApiKey string
 
 @description('Initial container image to deploy')
 param containerImage string = 'mcr.microsoft.com/dotnet/samples:aspnetapp'
@@ -86,18 +91,6 @@ module sql 'modules/sql-database.bicep' = {
 }
 
 // ---------------------------------------------------------------------------
-// Azure OpenAI (must be in a supported region — eastus, swedencentral, etc.)
-// ---------------------------------------------------------------------------
-module openai 'modules/openai.bicep' = {
-  name: 'openai'
-  params: {
-    location: location
-    environment: environment
-    prefix: prefix
-  }
-}
-
-// ---------------------------------------------------------------------------
 // Static Web App (deploy first so we have the hostname for CORS)
 // ---------------------------------------------------------------------------
 module swa 'modules/static-web-app.bicep' = {
@@ -119,9 +112,9 @@ module keyVault 'modules/key-vault.bicep' = {
     environment: environment
     prefix: prefix
     containerAppPrincipalId: managedIdentity.properties.principalId
-    sqlConnectionString: sql.outputs.connectionString
+    sqlConnectionString: 'Server=tcp:${sql.outputs.sqlServerFqdn},1433;Initial Catalog=${sql.outputs.databaseName};Persist Security Info=False;User ID=${sqlAdminLogin};Password=${sqlAdminPassword};MultipleActiveResultSets=False;Encrypt=True;TrustServerCertificate=False;Connection Timeout=30;'
     jwtSecretKey: jwtSecretKey
-    azureOpenAiApiKey: openai.outputs.openAiApiKey
+    azureOpenAiApiKey: openAiApiKey
   }
 }
 
@@ -139,8 +132,7 @@ module containerApps 'modules/container-apps.bicep' = {
     containerImage: containerImage
     keyVaultUri: keyVault.outputs.keyVaultUri
     managedIdentityId: managedIdentity.id
-    managedIdentityClientId: managedIdentity.properties.clientId
-    azureOpenAiEndpoint: openai.outputs.openAiEndpoint
+    azureOpenAiEndpoint: 'https://api.openai.com/v1'
     swaHostname: swa.outputs.staticWebAppDefaultHostname
   }
 }
@@ -156,3 +148,4 @@ output containerAppName string = containerApps.outputs.containerAppName
 output staticWebAppName string = swa.outputs.staticWebAppName
 output sqlServerFqdn string = sql.outputs.sqlServerFqdn
 output keyVaultName string = keyVault.outputs.keyVaultName
+output openAiEndpoint string = 'https://api.openai.com/v1'

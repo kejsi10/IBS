@@ -28,7 +28,9 @@ public sealed class PlaywrightBrowserManager : IPlaywrightBrowserManager
             _playwright = await Playwright.CreateAsync();
             _browser = await _playwright.Chromium.LaunchAsync(new BrowserTypeLaunchOptions
             {
-                Headless = true
+                Headless = true,
+                // Required when running as non-root inside a container
+                Args = ["--no-sandbox", "--disable-setuid-sandbox"]
             });
             return _browser;
         }

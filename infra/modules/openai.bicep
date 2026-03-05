@@ -45,4 +45,5 @@ resource gpt4oMiniDeployment 'Microsoft.CognitiveServices/accounts/deployments@2
 }
 
 output openAiEndpoint string = openAiAccount.properties.endpoint
-output openAiApiKey string = listKeys(openAiAccount.id, openAiAccount.apiVersion).key1
+#disable-next-line outputs-should-not-contain-secrets
+output openAiApiKey string = openAiAccount.listKeys().key1
