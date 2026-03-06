@@ -1,7 +1,7 @@
-using Azure;
-using Azure.AI.OpenAI;
+using System.ClientModel;
 using IBS.Documents.Application.Services;
 using Microsoft.Extensions.Options;
+using OpenAI;
 
 namespace IBS.Documents.Infrastructure.Ai;
 
@@ -36,9 +36,8 @@ public sealed class AzureOpenAITemplateEditingService(
             + "\n" + currentContent
             + "\n\nINSTRUCTION:\n" + instruction;
 
-        var client = new AzureOpenAIClient(
-            new Uri(_options.Endpoint),
-            new AzureKeyCredential(_options.ApiKey));
+        var clientOptions = new OpenAIClientOptions { Endpoint = new Uri(_options.Endpoint) };
+        var client = new OpenAIClient(new ApiKeyCredential(_options.ApiKey), clientOptions);
 
         var chatClient = client.GetChatClient(_options.DeploymentName);
 

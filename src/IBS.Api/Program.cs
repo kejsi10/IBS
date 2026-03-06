@@ -420,6 +420,12 @@ internal sealed class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITe
             return;
         }
 
+        if (item is TraceTelemetry trace &&
+            trace.Message?.Contains("/health", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return;
+        }
+
         next.Process(item);
     }
 }
