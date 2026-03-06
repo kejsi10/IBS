@@ -38,6 +38,9 @@ param jwtSecretName string = 'JwtSecretKey'
 @description('Azure OpenAI API key secret name in Key Vault')
 param openAiSecretName string = 'AzureOpenAiApiKey'
 
+@description('Azure Storage connection string secret name in Key Vault')
+param storageSecretName string = 'StorageConnectionString'
+
 @description('Azure OpenAI endpoint URL')
 param azureOpenAiEndpoint string
 
@@ -100,6 +103,11 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
           keyVaultUrl: '${keyVaultUri}secrets/${openAiSecretName}'
           identity: managedIdentityId
         }
+        {
+          name: 'storage-connection'
+          keyVaultUrl: '${keyVaultUri}secrets/${storageSecretName}'
+          identity: managedIdentityId
+        }
       ]
     }
     template: {
@@ -151,6 +159,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
             {
               name: 'Documents__Provider'
               value: 'Azure'
+            }
+            {
+              name: 'AzureStorage__ConnectionString'
+              secretRef: 'storage-connection'
             }
             {
               name: 'APPLICATIONINSIGHTS_CONNECTION_STRING'

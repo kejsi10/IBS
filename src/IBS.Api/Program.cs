@@ -1,5 +1,8 @@
 using System.Text;
 using System.Threading.RateLimiting;
+using Microsoft.ApplicationInsights.Channel;
+using Microsoft.ApplicationInsights.DataContracts;
+using Microsoft.ApplicationInsights.Extensibility;
 using IBS.Api.Configuration;
 using IBS.Api.Middleware;
 using IBS.Api.Services;
@@ -50,6 +53,7 @@ try
 
     // Add Application Insights (reads APPLICATIONINSIGHTS_CONNECTION_STRING env var automatically)
     builder.Services.AddApplicationInsightsTelemetry();
+    builder.Services.AddApplicationInsightsTelemetryProcessor<HealthCheckTelemetryFilter>();
 
     // Configure Serilog — also sink to Application Insights so structured logs appear in AI
     builder.Host.UseSerilog((context, services, configuration) => configuration
@@ -399,4 +403,23 @@ catch (Exception ex)
 finally
 {
     Log.CloseAndFlush();
+}
+
+/// <summary>
+/// Filters out health check requests from Application Insights telemetry
+/// to reduce noise from liveness/readiness probes.
+/// </summary>
+internal sealed class HealthCheckTelemetryFilter(ITelemetryProcessor next) : ITelemetryProcessor
+{
+    /// <inheritdoc />
+    public void Process(ITelemetry item)
+    {
+        if (item is RequestTelemetry request &&
+            request.Url?.AbsolutePath.Equals("/health", StringComparison.OrdinalIgnoreCase) == true)
+        {
+            return;
+        }
+
+        next.Process(item);
+    }
 }

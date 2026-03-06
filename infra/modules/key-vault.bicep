@@ -30,6 +30,10 @@ param jwtSecretKey string
 @secure()
 param azureOpenAiApiKey string
 
+@description('Azure Storage connection string to store as secret')
+@secure()
+param storageConnectionString string
+
 // Key Vault Secrets User role definition ID (built-in) — read-only, for the Container App MI
 var keyVaultSecretsUserRoleId = '4633458b-17de-408a-b874-0445c86b69e6'
 
@@ -95,6 +99,14 @@ resource secretOpenAi 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
   name: 'AzureOpenAiApiKey'
   properties: {
     value: azureOpenAiApiKey
+  }
+}
+
+resource secretStorage 'Microsoft.KeyVault/vaults/secrets@2023-07-01' = {
+  parent: keyVault
+  name: 'StorageConnectionString'
+  properties: {
+    value: storageConnectionString
   }
 }
 
