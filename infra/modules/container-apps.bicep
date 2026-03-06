@@ -141,6 +141,10 @@ resource containerApp 'Microsoft.App/containerApps@2024-03-01' = {
               secretRef: 'openai-api-key'
             }
             {
+              name: 'Cors__AllowedOrigins__0'
+              value: 'https://${swaHostname}'
+            }
+            {
               name: 'PolicyAssistant__Provider'
               value: 'Azure'
             }

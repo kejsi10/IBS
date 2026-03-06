@@ -368,11 +368,16 @@ public sealed class AuthController : ApiControllerBase
         var isProduction = !HttpContext.RequestServices
             .GetRequiredService<IWebHostEnvironment>().IsDevelopment();
 
+        // SameSite=None is required in production because the frontend (Static Web App)
+        // and the API (Container App) are on different domains. SameSite=None requires Secure=true.
+        // In development we use Strict to avoid needing HTTPS.
+        var sameSite = isProduction ? SameSiteMode.None : SameSiteMode.Strict;
+
         var accessOptions = new CookieOptions
         {
             HttpOnly = true,
             Secure = isProduction,
-            SameSite = SameSiteMode.Strict,
+            SameSite = sameSite,
             MaxAge = TimeSpan.FromSeconds(accessExpiresInSeconds),
             Path = "/"
         };
@@ -381,7 +386,7 @@ public sealed class AuthController : ApiControllerBase
         {
             HttpOnly = true,
             Secure = isProduction,
-            SameSite = SameSiteMode.Strict,
+            SameSite = sameSite,
             MaxAge = TimeSpan.FromDays(7),
             Path = "/api/v1/auth/refresh"
         };
