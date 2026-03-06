@@ -127,6 +127,16 @@ public sealed record EndorsementApprovedEvent(
 ) : DomainEvent;
 
 /// <summary>
+/// Event raised when a cancelled policy is reinstated.
+/// </summary>
+public sealed record PolicyReinstatedEvent(
+    Guid PolicyId,
+    Guid TenantId,
+    string PolicyNumber,
+    string Reason
+) : DomainEvent;
+
+/// <summary>
 /// Event raised when the policy premium changes.
 /// </summary>
 public sealed record PolicyPremiumChangedEvent(

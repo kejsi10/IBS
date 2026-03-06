@@ -1553,6 +1553,13 @@ namespace IBS.Infrastructure.Persistence.Migrations
                     b.Property<Guid?>("QuoteId")
                         .HasColumnType("uniqueidentifier");
 
+                    b.Property<DateTimeOffset?>("ReinstatementDate")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("ReinstatementReason")
+                        .HasMaxLength(1000)
+                        .HasColumnType("nvarchar(1000)");
+
                     b.Property<Guid?>("RenewalPolicyId")
                         .HasColumnType("uniqueidentifier");
 
@@ -1588,6 +1595,48 @@ namespace IBS.Infrastructure.Persistence.Migrations
                     b.ToTable("Policies", (string)null);
                 });
 
+            modelBuilder.Entity("IBS.Policies.Domain.Aggregates.Policy.PolicyHistory", b =>
+                {
+                    b.Property<Guid>("Id")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<string>("ChangesJson")
+                        .HasColumnType("nvarchar(max)");
+
+                    b.Property<DateTimeOffset>("CreatedAt")
+                        .HasColumnType("datetimeoffset");
+
+                    b.Property<string>("Description")
+                        .IsRequired()
+                        .HasMaxLength(500)
+                        .HasColumnType("nvarchar(500)");
+
+                    b.Property<string>("EventType")
+                        .IsRequired()
+                        .HasMaxLength(50)
+                        .HasColumnType("nvarchar(50)");
+
+                    b.Property<Guid>("PolicyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<byte[]>("RowVersion")
+                        .IsRequired()
+                        .ValueGeneratedOnAddOrUpdate()
+                        .HasColumnType("rowversion");
+
+                    b.Property<Guid>("TenantId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("UserId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.HasKey("Id");
+
+                    b.HasIndex("TenantId", "PolicyId");
+
+                    b.ToTable("PolicyHistory", (string)null);
+                });
+
             modelBuilder.Entity("IBS.Policies.Domain.Aggregates.Quote.Quote", b =>
                 {
                     b.Property<Guid>("Id")
@@ -1608,6 +1657,11 @@ namespace IBS.Infrastructure.Persistence.Migrations
                     b.Property<DateOnly>("ExpiresAt")
                         .HasColumnType("date");
 
+                    b.Property<bool>("IsRenewalQuote")
+                        .ValueGeneratedOnAdd()
+                        .HasColumnType("bit")
+                        .HasDefaultValue(false);
+
                     b.Property<string>("LineOfBusiness")
                         .IsRequired()
                         .HasMaxLength(50)
@@ -1618,6 +1672,9 @@ namespace IBS.Infrastructure.Persistence.Migrations
                         .HasColumnType("nvarchar(2000)");
 
                     b.Property<Guid?>("PolicyId")
+                        .HasColumnType("uniqueidentifier");
+
+                    b.Property<Guid?>("RenewalPolicyId")
                         .HasColumnType("uniqueidentifier");
 
                     b.Property<byte[]>("RowVersion")

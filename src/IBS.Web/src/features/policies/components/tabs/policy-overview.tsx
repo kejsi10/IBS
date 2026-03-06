@@ -136,6 +136,18 @@ export function PolicyOverviewTab({ policy }: PolicyOverviewTabProps) {
               <p className="mt-1">{policy.notes}</p>
             </div>
           )}
+
+          {policy.reinstatementDate && (
+            <div className="mt-6 border-t pt-6">
+              <p className="text-sm font-medium text-green-600">{t('policies.detail.overview.reinstatedOn')}</p>
+              <p className="mt-1 text-sm">
+                {new Date(policy.reinstatementDate).toLocaleDateString()}
+              </p>
+              {policy.reinstatementReason && (
+                <p className="mt-1 text-sm text-muted-foreground">{policy.reinstatementReason}</p>
+              )}
+            </div>
+          )}
         </CardContent>
       </Card>
 

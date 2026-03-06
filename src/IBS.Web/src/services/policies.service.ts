@@ -5,12 +5,15 @@ import type {
   PolicyStatus,
   CreatePolicyRequest,
   CancelPolicyRequest,
+  ReinstatePolicyRequest,
   AddCoverageRequest,
   UpdateCoverageRequest,
   AddEndorsementRequest,
   RejectEndorsementRequest,
   PolicyFilters,
   PaginatedResult,
+  PolicyHistoryResult,
+  RenewalComparisonDto,
   CreateResponse,
 } from '@/types/api';
 
@@ -126,6 +129,13 @@ export const policiesService = {
   },
 
   /**
+   * Reinstates a cancelled policy.
+   */
+  reinstate: async (id: string, data: ReinstatePolicyRequest): Promise<void> => {
+    await api.post(`/policies/${id}/reinstate`, data);
+  },
+
+  /**
    * Creates a renewal policy from an active policy.
    */
   renew: async (id: string): Promise<CreateResponse> => {
@@ -223,6 +233,32 @@ export const policiesService = {
       params: { daysUntilExpiration, page, pageSize },
     });
     return mapPolicyListResult(response.data);
+  },
+
+  /**
+   * Gets the renewal offer comparison for a policy.
+   */
+  getRenewalComparison: async (id: string): Promise<RenewalComparisonDto> => {
+    const response = await api.get<RenewalComparisonDto>(`/policies/${id}/renewal-comparison`);
+    return response.data;
+  },
+
+  /**
+   * Creates a renewal quote linked to this policy.
+   */
+  createRenewalQuote: async (id: string): Promise<CreateResponse> => {
+    const response = await api.post<CreateResponse>(`/policies/${id}/renewal-quote`);
+    return response.data;
+  },
+
+  /**
+   * Gets paginated history entries for a policy.
+   */
+  getHistory: async (id: string, page = 1, pageSize = 50): Promise<PolicyHistoryResult> => {
+    const response = await api.get<PolicyHistoryResult>(`/policies/${id}/history`, {
+      params: { page, pageSize },
+    });
+    return response.data;
   },
 
   /**

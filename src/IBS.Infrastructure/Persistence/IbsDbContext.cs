@@ -127,6 +127,11 @@ public sealed class IbsDbContext : BaseDbContext
     public DbSet<Endorsement> Endorsements => Set<Endorsement>();
 
     /// <summary>
+    /// Gets or sets the PolicyHistory DbSet.
+    /// </summary>
+    public DbSet<PolicyHistory> PolicyHistory => Set<PolicyHistory>();
+
+    /// <summary>
     /// Gets or sets the Quotes DbSet.
     /// </summary>
     public DbSet<Quote> Quotes => Set<Quote>();

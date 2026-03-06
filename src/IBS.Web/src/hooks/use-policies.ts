@@ -4,6 +4,7 @@ import type {
   PolicyFilters,
   CreatePolicyRequest,
   CancelPolicyRequest,
+  ReinstatePolicyRequest,
   AddCoverageRequest,
   UpdateCoverageRequest,
   AddEndorsementRequest,
@@ -23,6 +24,8 @@ export const policyKeys = {
     [...policyKeys.all, 'expiring', startDate, endDate] as const,
   dueForRenewal: (days: number) => [...policyKeys.all, 'dueForRenewal', days] as const,
   byClient: (clientId: string) => [...policyKeys.all, 'byClient', clientId] as const,
+  history: (id: string, page: number) => [...policyKeys.all, 'history', id, page] as const,
+  renewalComparison: (id: string) => [...policyKeys.all, 'renewalComparison', id] as const,
 };
 
 // ========================================
@@ -68,6 +71,17 @@ export function usePoliciesDueForRenewal(daysUntilExpiration = 60) {
   return useQuery({
     queryKey: policyKeys.dueForRenewal(daysUntilExpiration),
     queryFn: () => policiesService.getDueForRenewal(daysUntilExpiration),
+  });
+}
+
+/**
+ * Hook to fetch paginated history entries for a policy.
+ */
+export function usePolicyHistory(policyId: string, page = 1) {
+  return useQuery({
+    queryKey: policyKeys.history(policyId, page),
+    queryFn: () => policiesService.getHistory(policyId, page),
+    enabled: !!policyId,
   });
 }
 
@@ -139,6 +153,47 @@ export function useCancelPolicy() {
   return useMutation({
     mutationFn: ({ id, data }: { id: string; data: CancelPolicyRequest }) =>
       policiesService.cancel(id, data),
+    onSuccess: (_, { id }) => {
+      queryClient.invalidateQueries({ queryKey: policyKeys.detail(id) });
+      queryClient.invalidateQueries({ queryKey: policyKeys.lists() });
+    },
+  });
+}
+
+/**
+ * Hook to fetch the renewal offer comparison for a policy.
+ */
+export function useRenewalComparison(policyId: string) {
+  return useQuery({
+    queryKey: policyKeys.renewalComparison(policyId),
+    queryFn: () => policiesService.getRenewalComparison(policyId),
+    enabled: !!policyId,
+  });
+}
+
+/**
+ * Hook to create a renewal quote for a policy.
+ */
+export function useCreateRenewalQuote() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: (policyId: string) => policiesService.createRenewalQuote(policyId),
+    onSuccess: (_, policyId) => {
+      queryClient.invalidateQueries({ queryKey: policyKeys.renewalComparison(policyId) });
+    },
+  });
+}
+
+/**
+ * Hook to reinstate a cancelled policy.
+ */
+export function useReinstatePolicy() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: ({ id, data }: { id: string; data: ReinstatePolicyRequest }) =>
+      policiesService.reinstate(id, data),
     onSuccess: (_, { id }) => {
       queryClient.invalidateQueries({ queryKey: policyKeys.detail(id) });
       queryClient.invalidateQueries({ queryKey: policyKeys.lists() });

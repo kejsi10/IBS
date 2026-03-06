@@ -133,3 +133,18 @@ Content-Type: application/json
   "templateId": "{{templateId}}",
   "policyId": "00000000-0000-0000-0000-000000000000"
 }
+
+### ── Proposal Generation ────────────────────────────────────────────────
+
+### Generate a Proposal PDF from a Quote
+# Replace quoteId and templateId with real GUIDs from your database
+# templateId must be a Proposal-type template (TemplateType = 'Proposal')
+POST {{baseUrl}}/documents/generate-proposal
+Authorization: Bearer {{token}}
+X-Tenant-Id: {{tenantId}}
+Content-Type: application/json
+
+{
+  "templateId": "{{templateId}}",
+  "quoteId": "00000000-0000-0000-0000-000000000000"
+}

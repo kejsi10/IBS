@@ -6,6 +6,7 @@ using IBS.Policies.Application.Commands.ApproveEndorsement;
 using IBS.Policies.Application.Commands.BindPolicy;
 using IBS.Policies.Application.Commands.CancelPolicy;
 using IBS.Policies.Application.Commands.CreatePolicy;
+using IBS.Policies.Application.Commands.ReinstatePolicy;
 using IBS.Policies.Application.Commands.IssueEndorsement;
 using IBS.Policies.Application.Commands.RejectEndorsement;
 using IBS.Policies.Application.Commands.RemoveCoverage;
@@ -16,6 +17,9 @@ using IBS.Policies.Application.Queries.GetPolicies;
 using IBS.Policies.Application.Queries.GetPoliciesByClient;
 using IBS.Policies.Application.Queries.GetPoliciesDueForRenewal;
 using IBS.Policies.Application.Queries.GetPolicyById;
+using IBS.Policies.Application.Commands.CreateRenewalQuote;
+using IBS.Policies.Application.Queries.GetPolicyHistory;
+using IBS.Policies.Application.Queries.GetRenewalComparison;
 using IBS.Policies.Domain.Events;
 using IBS.BuildingBlocks.Domain.ValueObjects;
 using IBS.Policies.Domain.ValueObjects;
@@ -205,6 +209,35 @@ public sealed class PoliciesController : ApiControllerBase
             request.CancellationType,
             ExpectedRowVersion);
 
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Reinstates a cancelled policy.
+    /// </summary>
+    /// <param name="id">The policy identifier.</param>
+    /// <param name="request">The reinstatement request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>No content if successful.</returns>
+    /// <response code="204">If the policy was reinstated successfully.</response>
+    /// <response code="400">If the policy cannot be reinstated.</response>
+    /// <response code="404">If the policy is not found.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpPost("{id:guid}/reinstate")]
+    [ProducesResponseType(StatusCodes.Status204NoContent)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> ReinstatePolicy(
+        Guid id,
+        [FromBody] ReinstatePolicyRequest request,
+        CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Reinstating policy {PolicyId} for tenant {TenantId}", id, CurrentTenantId);
+
+        var command = new ReinstatePolicyCommand(CurrentTenantId, id, request.Reason, ExpectedRowVersion);
         var result = await _mediator.Send(command, cancellationToken);
 
         return ToActionResult(result);
@@ -506,6 +539,79 @@ public sealed class PoliciesController : ApiControllerBase
         var command = new RejectEndorsementCommand(CurrentTenantId, CurrentUserId, id, endorsementId, request.Reason, ExpectedRowVersion);
         var result = await _mediator.Send(command, cancellationToken);
 
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Gets the renewal offer comparison for a policy.
+    /// </summary>
+    /// <param name="id">The policy identifier.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Renewal comparison with current policy info and carrier offers.</returns>
+    /// <response code="200">Returns the renewal comparison.</response>
+    /// <response code="404">If the policy is not found.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet("{id:guid}/renewal-comparison")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetRenewalComparison(Guid id, CancellationToken cancellationToken)
+    {
+        var query = new GetRenewalComparisonQuery(CurrentTenantId, id);
+        var result = await _mediator.Send(query, cancellationToken);
+
+        if (result.IsSuccess && result.Value is null)
+            return NotFound(new { error = $"Policy with ID '{id}' not found." });
+
+        return ToActionResult(result);
+    }
+
+    /// <summary>
+    /// Creates a renewal quote linked to this policy.
+    /// </summary>
+    /// <param name="id">The policy identifier to create a renewal quote for.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The created quote ID.</returns>
+    /// <response code="201">Returns the newly created renewal quote ID.</response>
+    /// <response code="400">If the policy cannot have a renewal quote.</response>
+    /// <response code="404">If the policy is not found.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpPost("{id:guid}/renewal-quote")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> CreateRenewalQuote(Guid id, CancellationToken cancellationToken)
+    {
+        _logger.LogInformation("Creating renewal quote for policy {PolicyId} in tenant {TenantId}", id, CurrentTenantId);
+
+        var command = new CreateRenewalQuoteCommand(CurrentTenantId, CurrentUserId, id);
+        var result = await _mediator.Send(command, cancellationToken);
+
+        return ToCreatedResult(result, "GetQuoteById", new { id = result.IsSuccess ? result.Value : Guid.Empty });
+    }
+
+    /// <summary>
+    /// Gets paginated history entries for a policy.
+    /// </summary>
+    /// <param name="id">The policy identifier.</param>
+    /// <param name="page">Page number (1-based).</param>
+    /// <param name="pageSize">Page size.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>Paginated history entries.</returns>
+    /// <response code="200">Returns the history entries.</response>
+    /// <response code="401">If the user is not authenticated.</response>
+    [HttpGet("{id:guid}/history")]
+    [ProducesResponseType(StatusCodes.Status200OK)]
+    [ProducesResponseType(StatusCodes.Status401Unauthorized)]
+    public async Task<IActionResult> GetPolicyHistory(
+        Guid id,
+        [FromQuery] int page = 1,
+        [FromQuery] int pageSize = 50,
+        CancellationToken cancellationToken = default)
+    {
+        var query = new GetPolicyHistoryQuery(CurrentTenantId, id, page, pageSize);
+        var result = await _mediator.Send(query, cancellationToken);
         return ToActionResult(result);
     }
 
@@ -882,6 +988,17 @@ public sealed record RejectEndorsementRequest
 {
     /// <summary>
     /// Gets or sets the rejection reason.
+    /// </summary>
+    public string Reason { get; init; } = string.Empty;
+}
+
+/// <summary>
+/// Request model for reinstating a cancelled policy.
+/// </summary>
+public sealed record ReinstatePolicyRequest
+{
+    /// <summary>
+    /// Gets or sets the reinstatement reason.
     /// </summary>
     public string Reason { get; init; } = string.Empty;
 }

@@ -581,6 +581,87 @@ public class PolicyTests
         totalEndorsementPremium.Should().Be(50m); // 100 - 50
     }
 
+    [Fact]
+    public void Reinstate_CancelledPolicy_ReinstatesPolicy()
+    {
+        // Arrange
+        var policy = CreateCancelledPolicy(CancellationType.InsuredRequest);
+        policy.ClearDomainEvents();
+
+        // Act
+        policy.Reinstate("Customer resolved billing issue");
+
+        // Assert
+        policy.Status.Should().Be(PolicyStatus.Active);
+        policy.ReinstatementDate.Should().NotBeNull();
+        policy.ReinstatementReason.Should().Be("Customer resolved billing issue");
+        policy.CancellationDate.Should().BeNull();
+        policy.CancellationReason.Should().BeNull();
+        policy.CancellationType.Should().BeNull();
+    }
+
+    [Fact]
+    public void Reinstate_CancelledPolicy_RaisesPolicyReinstatedEvent()
+    {
+        // Arrange
+        var policy = CreateCancelledPolicy(CancellationType.InsuredRequest);
+        policy.ClearDomainEvents();
+
+        // Act
+        policy.Reinstate("Customer resolved billing issue");
+
+        // Assert
+        policy.DomainEvents.Should().HaveCount(1);
+        policy.DomainEvents.First().Should().BeOfType<PolicyReinstatedEvent>();
+    }
+
+    [Fact]
+    public void Reinstate_NotCancelledPolicy_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var policy = CreateTestPolicy();
+        policy.AddCoverage("BI", "Bodily Injury", Money.Create(500m));
+        policy.Bind(_userId);
+        policy.Activate();
+
+        // Act
+        var act = () => policy.Reinstate("Some reason");
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*Only cancelled policies*");
+    }
+
+    [Fact]
+    public void Reinstate_FlatCancelPolicy_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var policy = CreateCancelledPolicy(CancellationType.FlatCancel);
+        policy.ClearDomainEvents();
+
+        // Act
+        var act = () => policy.Reinstate("Trying to reinstate");
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*Flat-cancelled*");
+    }
+
+    [Fact]
+    public void Reinstate_MisrepresentationPolicy_ThrowsBusinessRuleViolationException()
+    {
+        // Arrange
+        var policy = CreateCancelledPolicy(CancellationType.Misrepresentation);
+        policy.ClearDomainEvents();
+
+        // Act
+        var act = () => policy.Reinstate("Trying to reinstate");
+
+        // Assert
+        act.Should().Throw<BusinessRuleViolationException>()
+            .WithMessage("*misrepresentation*");
+    }
+
     private Policy CreateTestPolicy()
     {
         var effectivePeriod = EffectivePeriod.Annual(new DateOnly(2024, 1, 1));
@@ -593,5 +674,16 @@ public class PolicyTests
             "Personal Auto Policy",
             effectivePeriod,
             _userId);
+    }
+
+    private Policy CreateCancelledPolicy(CancellationType cancellationType)
+    {
+        var policy = CreateTestPolicy();
+        policy.AddCoverage("BI", "Bodily Injury", Money.Create(500m));
+        policy.Bind(_userId);
+        policy.Activate();
+        var cancellationDate = policy.EffectivePeriod.EffectiveDate.AddMonths(1);
+        policy.Cancel(cancellationDate, "Test cancellation", cancellationType);
+        return policy;
     }
 }

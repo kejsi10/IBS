@@ -6,6 +6,7 @@ import type {
   CreateDocumentTemplateRequest,
   UpdateDocumentTemplateRequest,
   GenerateCOIRequest,
+  GenerateProposalRequest,
   AIEditTemplateRequest,
   DocumentEntityType,
   DocumentCategory,
@@ -166,5 +167,16 @@ export function useAIEditTemplate() {
   return useMutation({
     mutationFn: ({ id, request }: { id: string; request: AIEditTemplateRequest }) =>
       documentsService.aiEditTemplate(id, request),
+  });
+}
+
+/** Hook to generate a proposal document from a quote. */
+export function useGenerateProposal() {
+  const queryClient = useQueryClient();
+  return useMutation({
+    mutationFn: (request: GenerateProposalRequest) => documentsService.generateProposal(request),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: documentKeys.all });
+    },
   });
 }

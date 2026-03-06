@@ -9,6 +9,7 @@ import type {
   CreateDocumentTemplateRequest,
   UpdateDocumentTemplateRequest,
   GenerateCOIRequest,
+  GenerateProposalRequest,
   ImportTemplateResult,
   AIEditTemplateRequest,
   AIEditTemplateResult,
@@ -188,6 +189,15 @@ export const documentsService = {
    */
   async generateCOI(request: GenerateCOIRequest): Promise<CreateResponse> {
     const response = await api.post<CreateResponse>('/documents/generate-coi', request);
+    return response.data;
+  },
+
+  /**
+   * Generates a proposal PDF from a quote.
+   * @param request - The proposal generation request.
+   */
+  async generateProposal(request: GenerateProposalRequest): Promise<CreateResponse> {
+    const response = await api.post<CreateResponse>('/documents/generate-proposal', request);
     return response.data;
   },
 

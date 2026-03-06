@@ -9,5 +9,8 @@ public enum TemplateType
     CertificateOfInsurance,
 
     /// <summary>Policy summary template.</summary>
-    PolicySummary
+    PolicySummary,
+
+    /// <summary>Proposal document template for presenting carrier offers to clients.</summary>
+    Proposal
 }

@@ -1,7 +1,7 @@
 import * as React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { ArrowLeft, FileText, Play, CheckCircle, RefreshCw, PlusCircle } from 'lucide-react';
+import { ArrowLeft, FileText, Play, CheckCircle, RefreshCw, PlusCircle, RotateCcw } from 'lucide-react';
 import { getErrorMessage } from '@/lib/api';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -9,14 +9,25 @@ import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { PolicyOverviewTab } from './components/tabs/policy-overview';
 import { PolicyCoveragesTab } from './components/tabs/policy-coverages';
 import { PolicyEndorsementsTab } from './components/tabs/policy-endorsements';
+import { PolicyHistoryTab } from './components/tabs/policy-history-tab';
+import { PolicyRenewalComparisonTab } from './components/tabs/policy-renewal-comparison-tab';
 import {
   usePolicy,
   useBindPolicy,
   useActivatePolicy,
   useRenewPolicy,
+  useReinstatePolicy,
 } from '@/hooks/use-policies';
 import type { PolicyStatus } from '@/types/api';
 import type { BadgeVariant } from '@/components/ui/badge';
@@ -49,6 +60,10 @@ export function PolicyDetailPage() {
   const bindPolicy = useBindPolicy();
   const activatePolicy = useActivatePolicy();
   const renewPolicy = useRenewPolicy();
+  const reinstatePolicy = useReinstatePolicy();
+
+  const [reinstateDialogOpen, setReinstateDialogOpen] = React.useState(false);
+  const [reinstateReason, setReinstateReason] = React.useState('');
 
   const handleBind = async () => {
     try {
@@ -92,6 +107,26 @@ export function PolicyDetailPage() {
         description: t('policies.toast.renewed', { policyNumber: policy?.policyNumber }),
         variant: 'success',
       });
+    } catch (err) {
+      addToast({
+        title: t('common.toast.error'),
+        description: getErrorMessage(err),
+        variant: 'error',
+      });
+    }
+  };
+
+  const handleReinstate = async () => {
+    if (!reinstateReason.trim()) return;
+    try {
+      await reinstatePolicy.mutateAsync({ id: id!, data: { reason: reinstateReason } });
+      addToast({
+        title: t('policies.actions.reinstate'),
+        description: t('policies.toast.reinstated', { policyNumber: policy?.policyNumber }),
+        variant: 'success',
+      });
+      setReinstateDialogOpen(false);
+      setReinstateReason('');
     } catch (err) {
       addToast({
         title: t('common.toast.error'),
@@ -202,6 +237,16 @@ export function PolicyDetailPage() {
               </Button>
             </>
           )}
+          {status === 'Cancelled' && (
+            <Button
+              variant="outline"
+              onClick={() => setReinstateDialogOpen(true)}
+              disabled={reinstatePolicy.isPending}
+            >
+              <RotateCcw className="mr-2 h-4 w-4" />
+              {t('policies.detail.reinstate')}
+            </Button>
+          )}
         </div>
       </div>
 
@@ -254,6 +299,10 @@ export function PolicyDetailPage() {
           <TabsTrigger value="endorsements">
             {t('policies.detail.tabs.endorsements')} ({policy.endorsements.length})
           </TabsTrigger>
+          <TabsTrigger value="history">{t('policies.detail.tabs.history')}</TabsTrigger>
+          {status === 'PendingRenewal' && (
+            <TabsTrigger value="renewal">{t('policies.detail.tabs.renewal')}</TabsTrigger>
+          )}
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -267,7 +316,54 @@ export function PolicyDetailPage() {
         <TabsContent value="endorsements" className="mt-6">
           <PolicyEndorsementsTab policy={policy} />
         </TabsContent>
+
+        <TabsContent value="history" className="mt-6">
+          <PolicyHistoryTab policyId={id!} />
+        </TabsContent>
+
+        {status === 'PendingRenewal' && (
+          <TabsContent value="renewal" className="mt-6">
+            <PolicyRenewalComparisonTab policyId={id!} />
+          </TabsContent>
+        )}
       </Tabs>
+
+      {/* Reinstate Dialog */}
+      <Dialog open={reinstateDialogOpen} onOpenChange={setReinstateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>{t('policies.detail.reinstateDialog.title')}</DialogTitle>
+            <DialogDescription>
+              {t('policies.detail.reinstateDialog.description')}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            <label className="text-sm font-medium" htmlFor="reinstate-reason">
+              {t('policies.detail.reinstateDialog.reasonLabel')}
+            </label>
+            <textarea
+              id="reinstate-reason"
+              className="mt-1 w-full rounded-md border p-2 text-sm"
+              rows={3}
+              value={reinstateReason}
+              onChange={(e) => setReinstateReason(e.target.value)}
+              placeholder={t('policies.detail.reinstateDialog.reasonPlaceholder')}
+              maxLength={1000}
+            />
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setReinstateDialogOpen(false)}>
+              {t('common.cancel')}
+            </Button>
+            <Button
+              onClick={handleReinstate}
+              disabled={reinstatePolicy.isPending || !reinstateReason.trim()}
+            >
+              {t('policies.detail.reinstateDialog.confirm')}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

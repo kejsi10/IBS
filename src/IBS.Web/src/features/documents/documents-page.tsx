@@ -30,6 +30,7 @@ const CATEGORY_COLORS: Record<DocumentCategory, string> = {
   ClaimReport: 'bg-red-100 text-red-800',
   KYC: 'bg-yellow-100 text-yellow-800',
   Invoice: 'bg-orange-100 text-orange-800',
+  Proposal: 'bg-indigo-100 text-indigo-800',
   Other: 'bg-gray-100 text-gray-700',
 };
 

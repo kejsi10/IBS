@@ -14,7 +14,7 @@ public sealed class GenerateCOICommandHandler(
     IDocumentTemplateRepository templateRepository,
     IDocumentRepository documentRepository,
     IPolicyDataService policyDataService,
-    ICOIGeneratorService coiGeneratorService,
+    IPdfGeneratorService pdfGeneratorService,
     IBlobStorageService blobStorageService,
     IUnitOfWork unitOfWork) : ICommandHandler<GenerateCOICommand, Guid>
 {
@@ -29,23 +29,24 @@ public sealed class GenerateCOICommandHandler(
         if (policyData is null)
             return Error.NotFound("Policy not found.");
 
-        var templateData = new COITemplateData
+        // Build an anonymous object with pre-formatted dates for Handlebars rendering
+        var templateData = new
         {
-            PolicyNumber = policyData.PolicyNumber,
-            ClientName = policyData.ClientName,
-            CarrierName = policyData.CarrierName,
-            EffectiveDate = policyData.EffectiveDate,
-            ExpirationDate = policyData.ExpirationDate,
-            LineOfBusiness = policyData.LineOfBusiness,
-            CoverageSummary = policyData.CoverageSummary,
+            policyData.PolicyNumber,
+            policyData.ClientName,
+            policyData.CarrierName,
+            EffectiveDate = policyData.EffectiveDate.ToString("MM/dd/yyyy"),
+            ExpirationDate = policyData.ExpirationDate.ToString("MM/dd/yyyy"),
+            policyData.LineOfBusiness,
+            policyData.CoverageSummary,
             BrokerName = "IBS Brokerage",
-            IssuedDate = DateTimeOffset.UtcNow
+            IssuedDate = DateTimeOffset.UtcNow.ToString("MM/dd/yyyy")
         };
 
         byte[] pdfBytes;
         try
         {
-            pdfBytes = await coiGeneratorService.GenerateAsync(template.Content, templateData, cancellationToken);
+            pdfBytes = await pdfGeneratorService.GenerateAsync(template.Content, templateData, cancellationToken);
         }
         catch (Exception ex)
         {

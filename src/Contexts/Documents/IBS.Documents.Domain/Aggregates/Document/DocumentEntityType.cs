@@ -17,6 +17,9 @@ public enum DocumentEntityType
     /// <summary>Document linked to a carrier.</summary>
     Carrier,
 
+    /// <summary>Document linked to a quote.</summary>
+    Quote,
+
     /// <summary>General document not linked to a specific entity.</summary>
     General
 }

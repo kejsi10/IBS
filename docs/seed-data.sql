@@ -1004,6 +1004,27 @@ BEGIN
     PRINT 'Created 2 sample Documents';
 END
 
+-- Default Proposal Template
+IF NOT EXISTS (SELECT 1 FROM DocumentTemplates WHERE TenantId = @TenantId AND Name = 'Standard Proposal Template')
+BEGIN
+    DECLARE @ProposalTemplateId UNIQUEIDENTIFIER = NEWID();
+    INSERT INTO DocumentTemplates (Id, TenantId, Name, Description, TemplateType, Content, IsActive, Version, CreatedBy, CreatedAt, UpdatedAt)
+    VALUES (
+        @ProposalTemplateId,
+        @TenantId,
+        'Standard Proposal Template',
+        'Standard carrier renewal/new business proposal presenting coverage options to clients',
+        'Proposal',
+        N'<!DOCTYPE html><html><head><meta charset="UTF-8"><title>Insurance Proposal</title><style>*{box-sizing:border-box}body{font-family:Arial,sans-serif;font-size:10pt;margin:40px;color:#333}h1{font-size:18pt;font-weight:bold;color:#1a365d;margin:0 0 4px}h2{font-size:13pt;font-weight:bold;color:#2d3748;margin:20px 0 8px}.subtitle{font-size:9pt;color:#718096;margin-bottom:20px}.info-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px;margin-bottom:20px}.info-card{background:#f7fafc;border:1px solid #e2e8f0;border-radius:6px;padding:12px}.info-label{font-size:8pt;color:#718096;text-transform:uppercase;letter-spacing:0.05em;margin-bottom:2px}.info-value{font-size:11pt;font-weight:600;color:#2d3748}table{width:100%;border-collapse:collapse;margin-top:8px}th{background:#2d3748;color:#fff;padding:10px 12px;text-align:left;font-size:9pt;font-weight:600}td{padding:10px 12px;font-size:10pt;border-bottom:1px solid #e2e8f0;vertical-align:top}tr:nth-child(even) td{background:#f7fafc}.premium{font-weight:700;color:#276749}.status-Quoted{color:#276749;font-weight:600}.status-Pending{color:#b7791f}.status-Declined{color:#c53030}.notes{background:#fff8dc;border-left:4px solid #d69e2e;padding:12px;margin:16px 0;font-size:10pt}.footer{text-align:center;font-size:8pt;color:#a0aec0;margin-top:24px;border-top:1px solid #e2e8f0;padding-top:8px}</style></head><body><h1>INSURANCE PROPOSAL</h1><p class="subtitle">Prepared by IBS Brokerage &mdash; {{GeneratedDate}}</p><div class="info-grid"><div class="info-card"><div class="info-label">Prepared For</div><div class="info-value">{{ClientName}}</div>{{#if ClientAddress}}<div style="font-size:9pt;color:#718096;margin-top:4px">{{ClientAddress}}</div>{{/if}}</div><div class="info-card"><div class="info-label">Line of Business</div><div class="info-value">{{LineOfBusiness}}</div></div><div class="info-card"><div class="info-label">Effective Date</div><div class="info-value">{{EffectiveDate}}</div></div><div class="info-card"><div class="info-label">Expiration Date</div><div class="info-value">{{ExpirationDate}}</div></div></div>{{#if Notes}}<div class="notes"><strong>Notes:</strong> {{Notes}}</div>{{/if}}<h2>Carrier Options</h2><table><thead><tr><th>Carrier</th><th>Status</th><th>Annual Premium</th><th>Proposed Coverages</th><th>Conditions</th></tr></thead><tbody>{{#each CarrierOffers}}<tr><td>{{CarrierName}}</td><td class="status-{{Status}}">{{Status}}</td><td class="premium">{{#if PremiumAmount}}{{PremiumAmount}}{{else}}&mdash;{{/if}}</td><td>{{#if ProposedCoverages}}{{ProposedCoverages}}{{else}}&mdash;{{/if}}</td><td>{{#if Conditions}}{{Conditions}}{{else}}&mdash;{{/if}}</td></tr>{{/each}}</tbody></table><div class="footer">This proposal is for informational purposes only. Coverage is subject to underwriting approval and policy terms.</div></body></html>',
+        1,
+        1,
+        'admin@test.com',
+        @Now,
+        @Now
+    );
+    PRINT 'Created Proposal Template: Standard Proposal Template';
+END
+
 -- =====================================================
 -- SUMMARY
 -- =====================================================

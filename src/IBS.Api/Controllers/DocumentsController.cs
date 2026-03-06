@@ -4,6 +4,7 @@ using IBS.Documents.Application.Commands.DeactivateDocumentTemplate;
 using IBS.Documents.Application.Commands.DeleteDocument;
 using IBS.Documents.Application.Commands.EditTemplateWithAI;
 using IBS.Documents.Application.Commands.GenerateCOI;
+using IBS.Documents.Application.Commands.GenerateProposal;
 using IBS.Documents.Application.Commands.ImportTemplateFromPdf;
 using IBS.Documents.Application.Commands.UpdateDocumentTemplate;
 using IBS.Documents.Application.Commands.UploadDocument;
@@ -394,6 +395,31 @@ public sealed class DocumentsController : ApiControllerBase
         if (!result.IsSuccess) return ToActionResult(result);
         return CreatedAtAction(nameof(GetDocument), new { id = result.Value }, new { id = result.Value });
     }
+
+    /// <summary>
+    /// Generates a proposal PDF from a quote and stores it as a document.
+    /// </summary>
+    /// <param name="request">The proposal generation request.</param>
+    /// <param name="cancellationToken">The cancellation token.</param>
+    /// <returns>The generated document identifier.</returns>
+    [HttpPost("generate-proposal")]
+    [ProducesResponseType(StatusCodes.Status201Created)]
+    [ProducesResponseType(StatusCodes.Status400BadRequest)]
+    [ProducesResponseType(StatusCodes.Status404NotFound)]
+    public async Task<IActionResult> GenerateProposal(
+        [FromBody] GenerateProposalRequest request,
+        CancellationToken cancellationToken)
+    {
+        var command = new GenerateProposalCommand(
+            CurrentTenantId,
+            CurrentUserId.ToString(),
+            request.TemplateId,
+            request.QuoteId);
+
+        var result = await _mediator.Send(command, cancellationToken);
+        if (!result.IsSuccess) return ToActionResult(result);
+        return CreatedAtAction(nameof(GetDocument), new { id = result.Value }, new { id = result.Value });
+    }
 }
 
 /// <summary>
@@ -425,3 +451,12 @@ public sealed record GenerateCOIRequest(
 /// </summary>
 /// <param name="Instruction">Natural language instruction describing the desired template modification.</param>
 public sealed record AIEditTemplateRequest(string Instruction);
+
+/// <summary>
+/// Request model for generating a proposal PDF from a quote.
+/// </summary>
+/// <param name="TemplateId">The proposal template identifier.</param>
+/// <param name="QuoteId">The quote identifier to generate the proposal for.</param>
+public sealed record GenerateProposalRequest(
+    Guid TemplateId,
+    Guid QuoteId);

@@ -20,6 +20,7 @@ public static class DependencyInjection
         // Register repositories
         services.AddScoped<IPolicyRepository, PolicyRepository>();
         services.AddScoped<IQuoteRepository, QuoteRepository>();
+        services.AddScoped<IPolicyHistoryRepository, PolicyHistoryRepository>();
 
         // Register query services
         services.AddScoped<IQuoteQueries, QuoteQueries>();

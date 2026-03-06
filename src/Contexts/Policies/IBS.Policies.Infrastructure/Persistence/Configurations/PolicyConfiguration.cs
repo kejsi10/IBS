@@ -116,6 +116,11 @@ public sealed class PolicyConfiguration : IEntityTypeConfiguration<Policy>
             .HasConversion<string>()
             .HasMaxLength(30);
 
+        builder.Property(x => x.ReinstatementDate);
+
+        builder.Property(x => x.ReinstatementReason)
+            .HasMaxLength(1000);
+
         builder.Property(x => x.Notes)
             .HasMaxLength(4000);
 

@@ -14,5 +14,7 @@ public sealed record CreateQuoteCommand(
     DateOnly EffectiveDate,
     DateOnly ExpirationDate,
     string? Notes = null,
-    DateOnly? QuoteExpiresAt = null
+    DateOnly? QuoteExpiresAt = null,
+    bool IsRenewalQuote = false,
+    Guid? RenewalPolicyId = null
 ) : ICommand<Guid>;

@@ -162,6 +162,51 @@ public sealed class QuoteQueries : IQuoteQueries
     }
 
     /// <inheritdoc />
+    public async Task<IReadOnlyList<QuoteDetailReadModel>> GetRenewalQuotesAsync(
+        Guid tenantId,
+        Guid renewalPolicyId,
+        CancellationToken cancellationToken = default)
+    {
+        var quotes = await _context.Set<Quote>()
+            .AsNoTracking()
+            .Include(q => q.Carriers)
+            .Where(q => q.TenantId == tenantId && q.IsRenewalQuote && q.RenewalPolicyId == renewalPolicyId)
+            .OrderByDescending(q => q.CreatedAt)
+            .ToListAsync(cancellationToken);
+
+        return quotes.Select(quote => new QuoteDetailReadModel(
+            quote.Id,
+            quote.ClientId,
+            null,
+            quote.LineOfBusiness.GetDisplayName(),
+            quote.EffectivePeriod.EffectiveDate,
+            quote.EffectivePeriod.ExpirationDate,
+            quote.Status.GetDisplayName(),
+            quote.ExpiresAt,
+            quote.AcceptedCarrierId,
+            quote.PolicyId,
+            quote.Notes,
+            quote.CreatedBy,
+            quote.CreatedAt,
+            quote.UpdatedAt,
+            quote.Carriers.Select(c => new QuoteCarrierReadModel(
+                c.Id,
+                c.CarrierId,
+                null,
+                c.Status.GetDisplayName(),
+                c.PremiumAmount,
+                c.PremiumCurrency,
+                c.DeclinationReason,
+                c.Conditions,
+                c.ProposedCoverages,
+                c.RespondedAt,
+                c.ExpiresAt
+            )).ToList(),
+            Convert.ToBase64String(quote.RowVersion)
+        )).ToList();
+    }
+
+    /// <inheritdoc />
     public async Task<QuoteSummaryStats> GetSummaryAsync(Guid tenantId, CancellationToken cancellationToken = default)
     {
         var quotes = _context.Set<Quote>()

@@ -111,6 +111,16 @@ public sealed class Policy : TenantAggregateRoot
     public CancellationType? CancellationType { get; private set; }
 
     /// <summary>
+    /// Gets the reinstatement date (if reinstated).
+    /// </summary>
+    public DateTimeOffset? ReinstatementDate { get; private set; }
+
+    /// <summary>
+    /// Gets the reinstatement reason (if reinstated).
+    /// </summary>
+    public string? ReinstatementReason { get; private set; }
+
+    /// <summary>
     /// Gets any additional notes for the policy.
     /// </summary>
     public string? Notes { get; private set; }
@@ -349,6 +359,35 @@ public sealed class Policy : TenantAggregateRoot
 
         Status = PolicyStatus.PendingRenewal;
         MarkAsUpdated();
+    }
+
+    /// <summary>
+    /// Reinstates a cancelled policy, restoring it to Active status.
+    /// Cannot reinstate flat-cancelled or misrepresentation-cancelled policies.
+    /// </summary>
+    public void Reinstate(string reason)
+    {
+        if (Status != PolicyStatus.Cancelled)
+            throw new BusinessRuleViolationException("Only cancelled policies can be reinstated.");
+
+        if (CancellationType == Events.CancellationType.FlatCancel)
+            throw new BusinessRuleViolationException("Flat-cancelled policies cannot be reinstated.");
+
+        if (CancellationType == Events.CancellationType.Misrepresentation)
+            throw new BusinessRuleViolationException("Policies cancelled for misrepresentation cannot be reinstated.");
+
+        if (string.IsNullOrWhiteSpace(reason))
+            throw new ArgumentException("Reinstatement reason is required.", nameof(reason));
+
+        Status = PolicyStatus.Active;
+        ReinstatementDate = DateTimeOffset.UtcNow;
+        ReinstatementReason = reason.Trim();
+        CancellationDate = null;
+        CancellationReason = null;
+        CancellationType = null;
+        MarkAsUpdated();
+
+        RaiseDomainEvent(new PolicyReinstatedEvent(Id, TenantId, PolicyNumber.Value, reason));
     }
 
     /// <summary>

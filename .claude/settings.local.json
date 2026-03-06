@@ -36,7 +36,8 @@
       "Bash(done)",
       "Bash(do sed -i 's/using IBS\\\\.Commissions\\\\.Domain\\\\.ValueObjects;/using IBS.BuildingBlocks.Domain.ValueObjects;\\\\nusing IBS.Commissions.Domain.ValueObjects;/' \"$f\")",
       "Bash(node -e:*)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(xargs basename:*)"
     ]
   }
 }

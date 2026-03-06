@@ -875,10 +875,10 @@ These features were scoped out of the initial implementation phases. They are li
 ### Policy Context
 | Feature | Priority | Complexity | Notes |
 |---------|----------|------------|-------|
-| F5.6: Proposal generation (PDF) | P2 | Medium | Quote proposal document via Document Context |
-| F5.12: Policy reinstatement | P2 | Medium | Reinstate cancelled policies |
-| F5.14: Policy version history | P3 | High | Full audit trail of policy changes |
-| F5.17: Renewal offer comparison | P3 | Medium | Side-by-side renewal quote comparison |
+| ~~F5.6: Proposal generation (PDF)~~ | P2 | Medium | ✅ Complete — Quote proposal PDF via IPdfGeneratorService + Playwright |
+| ~~F5.12: Policy reinstatement~~ | P2 | Medium | ✅ Complete — Reinstate cancelled policies (excl. FlatCancel/Misrepresentation) |
+| ~~F5.14: Policy version history~~ | P3 | High | ✅ Complete — Event-driven audit timeline with History tab |
+| ~~F5.17: Renewal offer comparison~~ | P3 | Medium | ✅ Complete — Side-by-side renewal quote comparison with PendingRenewal tab |
 
 ### Claims Context
 | Feature | Priority | Complexity | Notes |

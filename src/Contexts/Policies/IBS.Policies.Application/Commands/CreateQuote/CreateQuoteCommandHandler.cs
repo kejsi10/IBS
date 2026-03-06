@@ -35,7 +35,9 @@ public sealed class CreateQuoteCommandHandler(
             effectivePeriod,
             request.UserId,
             request.Notes,
-            request.QuoteExpiresAt);
+            request.QuoteExpiresAt,
+            request.IsRenewalQuote,
+            request.RenewalPolicyId);
 
         await quoteRepository.AddAsync(quote, cancellationToken);
         await unitOfWork.SaveChangesAsync(cancellationToken);

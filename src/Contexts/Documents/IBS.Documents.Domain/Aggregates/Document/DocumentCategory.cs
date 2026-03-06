@@ -23,6 +23,9 @@ public enum DocumentCategory
     /// <summary>Invoice document.</summary>
     Invoice,
 
+    /// <summary>Proposal document presenting carrier renewal/new business offers.</summary>
+    Proposal,
+
     /// <summary>Other/unclassified document.</summary>
     Other
 }

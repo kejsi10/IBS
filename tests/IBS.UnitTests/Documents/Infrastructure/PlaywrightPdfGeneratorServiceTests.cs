@@ -1,5 +1,4 @@
 using FluentAssertions;
-using IBS.Documents.Application.Services;
 using IBS.Documents.Infrastructure.Pdf;
 using Microsoft.Playwright;
 using NSubstitute;
@@ -62,18 +61,18 @@ public class PlaywrightPdfGeneratorServiceTests
         await _sut.GenerateAsync(template, data);
 
         // Assert
-        capturedHtml.Should().Contain(data.PolicyNumber);
-        capturedHtml.Should().Contain(data.ClientName);
+        capturedHtml.Should().Contain("POL-001");
+        capturedHtml.Should().Contain("Acme Corp");
         capturedHtml.Should().NotContain("{{PolicyNumber}}");
         capturedHtml.Should().NotContain("{{ClientName}}");
     }
 
     [Fact]
-    public async Task GenerateAsync_FormatsDatePlaceholders()
+    public async Task GenerateAsync_RendersPreFormattedDatesFromCaller()
     {
-        // Arrange
+        // Arrange — caller is responsible for pre-formatting dates before passing to GenerateAsync
         const string template = "<html><body><p>{{EffectiveDate}} to {{ExpirationDate}}</p></body></html>";
-        var data = CreateSampleData();
+        var data = new { EffectiveDate = "01/01/2024", ExpirationDate = "01/01/2025" };
 
         string capturedHtml = string.Empty;
         await _page.SetContentAsync(
@@ -84,8 +83,8 @@ public class PlaywrightPdfGeneratorServiceTests
         await _sut.GenerateAsync(template, data);
 
         // Assert
-        capturedHtml.Should().Contain("01/01/2024"); // EffectiveDate formatted
-        capturedHtml.Should().Contain("01/01/2025"); // ExpirationDate formatted
+        capturedHtml.Should().Contain("01/01/2024");
+        capturedHtml.Should().Contain("01/01/2025");
     }
 
     [Fact]
@@ -116,16 +115,16 @@ public class PlaywrightPdfGeneratorServiceTests
         await _page.Received(1).CloseAsync(Arg.Any<PageCloseOptions?>());
     }
 
-    private static COITemplateData CreateSampleData() => new()
+    private static object CreateSampleData() => new
     {
         PolicyNumber = "POL-001",
         ClientName = "Acme Corp",
         CarrierName = "Safe Insurance Co",
-        EffectiveDate = new DateTimeOffset(2024, 1, 1, 0, 0, 0, TimeSpan.Zero),
-        ExpirationDate = new DateTimeOffset(2025, 1, 1, 0, 0, 0, TimeSpan.Zero),
+        EffectiveDate = "01/01/2024",
+        ExpirationDate = "01/01/2025",
         LineOfBusiness = "GeneralLiability",
-        CoverageSummary = ["General Liability: $1M/$2M", "Commercial Property: $500K"],
+        CoverageSummary = new[] { "General Liability: $1M/$2M", "Commercial Property: $500K" },
         BrokerName = "IBS Brokerage",
-        IssuedDate = new DateTimeOffset(2024, 6, 1, 0, 0, 0, TimeSpan.Zero)
+        IssuedDate = "06/01/2024"
     };
 }

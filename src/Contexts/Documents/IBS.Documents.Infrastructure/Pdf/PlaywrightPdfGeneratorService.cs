@@ -5,32 +5,21 @@ using Microsoft.Playwright;
 namespace IBS.Documents.Infrastructure.Pdf;
 
 /// <summary>
-/// Playwright-based implementation of ICOIGeneratorService.
-/// Renders the Handlebars HTML template with policy data, then converts it to a PDF
+/// Playwright-based implementation of IPdfGeneratorService.
+/// Renders a Handlebars HTML template with any data object, then converts it to a PDF
 /// using a headless Chromium browser via Playwright.
 /// </summary>
-public sealed class PlaywrightPdfGeneratorService(IPlaywrightBrowserManager browserManager) : ICOIGeneratorService
+public sealed class PlaywrightPdfGeneratorService(IPlaywrightBrowserManager browserManager) : IPdfGeneratorService
 {
     /// <inheritdoc />
     public async Task<byte[]> GenerateAsync(
         string templateContent,
-        COITemplateData data,
+        object data,
         CancellationToken cancellationToken = default)
     {
-        // Compile and render the Handlebars template with policy data
+        // Compile and render the Handlebars template with the provided data
         var template = Handlebars.Compile(templateContent);
-        var html = template(new
-        {
-            data.PolicyNumber,
-            data.ClientName,
-            data.CarrierName,
-            EffectiveDate = data.EffectiveDate.ToString("MM/dd/yyyy"),
-            ExpirationDate = data.ExpirationDate.ToString("MM/dd/yyyy"),
-            data.LineOfBusiness,
-            data.CoverageSummary,
-            data.BrokerName,
-            IssuedDate = data.IssuedDate.ToString("MM/dd/yyyy")
-        });
+        var html = template(data);
 
         // Use the shared browser; each request gets its own page
         var browser = await browserManager.GetBrowserAsync();

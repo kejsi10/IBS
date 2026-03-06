@@ -55,6 +55,16 @@ public sealed class Quote : TenantAggregateRoot
     public string? Notes { get; private set; }
 
     /// <summary>
+    /// Gets a value indicating whether this is a renewal quote.
+    /// </summary>
+    public bool IsRenewalQuote { get; private set; }
+
+    /// <summary>
+    /// Gets the policy being renewed (only set when <see cref="IsRenewalQuote"/> is true).
+    /// </summary>
+    public Guid? RenewalPolicyId { get; private set; }
+
+    /// <summary>
     /// Gets the user who created this quote.
     /// </summary>
     public Guid CreatedBy { get; private set; }
@@ -87,8 +97,13 @@ public sealed class Quote : TenantAggregateRoot
         EffectivePeriod effectivePeriod,
         Guid createdBy,
         string? notes = null,
-        DateOnly? expiresAt = null)
+        DateOnly? expiresAt = null,
+        bool isRenewalQuote = false,
+        Guid? renewalPolicyId = null)
     {
+        if (isRenewalQuote && renewalPolicyId is null)
+            throw new ArgumentException("RenewalPolicyId is required when IsRenewalQuote is true.", nameof(renewalPolicyId));
+
         var quote = new Quote
         {
             TenantId = tenantId,
@@ -98,7 +113,9 @@ public sealed class Quote : TenantAggregateRoot
             Status = QuoteStatus.Draft,
             ExpiresAt = expiresAt ?? DateOnly.FromDateTime(DateTime.UtcNow.AddDays(30)),
             CreatedBy = createdBy,
-            Notes = notes?.Trim()
+            Notes = notes?.Trim(),
+            IsRenewalQuote = isRenewalQuote,
+            RenewalPolicyId = renewalPolicyId
         };
 
         quote.RaiseDomainEvent(new QuoteCreatedEvent(

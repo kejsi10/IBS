@@ -37,10 +37,11 @@ public static class DependencyInjection
 
         // Cross-context services
         services.AddScoped<IPolicyDataService, PolicyDataService>();
+        services.AddScoped<IQuoteDataService, QuoteDataService>();
 
         // PDF generation — singleton browser, scoped service
         services.AddSingleton<IPlaywrightBrowserManager, PlaywrightBrowserManager>();
-        services.AddScoped<ICOIGeneratorService, PlaywrightPdfGeneratorService>();
+        services.AddScoped<IPdfGeneratorService, PlaywrightPdfGeneratorService>();
 
         // AI services — config-driven provider selection
         services.Configure<OllamaOptions>(configuration.GetSection(OllamaOptions.SectionName));

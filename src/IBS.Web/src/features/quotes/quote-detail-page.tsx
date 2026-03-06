@@ -1,12 +1,20 @@
 import * as React from 'react';
 import { useParams, useNavigate, Link } from 'react-router-dom';
-import { ArrowLeft, Send, XCircle, CheckCircle, MessageSquare } from 'lucide-react';
+import { ArrowLeft, Send, XCircle, CheckCircle, MessageSquare, FileDown } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Skeleton } from '@/components/ui/skeleton';
 import { useToast } from '@/components/ui/toast';
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from '@/components/ui/dialog';
 import { formatCurrency, formatDate } from '@/lib/format';
 import {
   useQuote,
@@ -14,6 +22,9 @@ import {
   useCancelQuote,
   useAcceptQuoteCarrier,
 } from '@/hooks';
+import { useDocumentTemplates, useGenerateProposal } from '@/hooks/use-documents';
+import { documentsService } from '@/services';
+import { openSafeUrl } from '@/lib/utils';
 import { RecordResponseDialog } from './components/record-response-dialog';
 import type { QuoteCarrier } from '@/types/api';
 import type { BadgeVariant } from '@/components/ui/badge';
@@ -59,6 +70,27 @@ export function QuoteDetailPage() {
     quoteCarrierId: string;
     carrierName: string;
   }>({ open: false, quoteCarrierId: '', carrierName: '' });
+
+  const [proposalDialogOpen, setProposalDialogOpen] = React.useState(false);
+  const [selectedTemplateId, setSelectedTemplateId] = React.useState('');
+  const generateProposal = useGenerateProposal();
+  const { data: proposalTemplates } = useDocumentTemplates({ templateType: 'Proposal', isActive: true, pageSize: 50 });
+
+  /** Generates a proposal PDF for this quote. */
+  const handleGenerateProposal = async (e: React.FormEvent) => {
+    e.preventDefault();
+    try {
+      const result = await generateProposal.mutateAsync({ templateId: selectedTemplateId, quoteId: id! });
+      const downloadUrl = await documentsService.getDownloadUrl(result.id);
+      openSafeUrl(downloadUrl);
+      setProposalDialogOpen(false);
+      setSelectedTemplateId('');
+      generateProposal.reset();
+      addToast({ title: 'Proposal generated', description: 'The proposal PDF has been created.', variant: 'success' });
+    } catch (err) {
+      addToast({ title: 'Error', description: err instanceof Error ? err.message : 'Failed to generate proposal', variant: 'error' });
+    }
+  };
 
   /** Submits the quote to carriers. */
   const handleSubmit = async () => {
@@ -147,6 +179,7 @@ export function QuoteDetailPage() {
 
   const canSubmit = quote.status === 'Draft';
   const canCancel = quote.status === 'Draft' || quote.status === 'Submitted';
+  const canGenerateProposal = quote.status === 'Quoted' || quote.status === 'Submitted';
 
   return (
     <div className="space-y-6">
@@ -176,6 +209,12 @@ export function QuoteDetailPage() {
 
         {/* Actions */}
         <div className="flex gap-2">
+          {canGenerateProposal && (
+            <Button variant="outline" onClick={() => setProposalDialogOpen(true)}>
+              <FileDown className="mr-2 h-4 w-4" />
+              Generate Proposal
+            </Button>
+          )}
           {canSubmit && (
             <Button onClick={handleSubmit} disabled={submitQuote.isPending}>
               <Send className="mr-2 h-4 w-4" />
@@ -263,6 +302,50 @@ export function QuoteDetailPage() {
         open={responseDialog.open}
         onClose={() => setResponseDialog({ open: false, quoteCarrierId: '', carrierName: '' })}
       />
+
+      {/* Generate Proposal Dialog */}
+      <Dialog open={proposalDialogOpen} onOpenChange={(open) => { if (!open) { setProposalDialogOpen(false); setSelectedTemplateId(''); generateProposal.reset(); } }}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Generate Proposal</DialogTitle>
+            <DialogDescription>
+              Select a proposal template to generate a PDF for this quote.
+            </DialogDescription>
+          </DialogHeader>
+          <form onSubmit={handleGenerateProposal} className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium mb-1">Proposal Template</label>
+              <select
+                className="w-full rounded-md border border-input bg-background px-3 py-2 text-sm"
+                value={selectedTemplateId}
+                onChange={(e) => setSelectedTemplateId(e.target.value)}
+                required
+              >
+                <option value="">Select a template...</option>
+                {proposalTemplates?.items.map((t) => (
+                  <option key={t.id} value={t.id}>{t.name}</option>
+                ))}
+              </select>
+            </div>
+            {generateProposal.isError && (
+              <p className="text-sm text-red-600">Failed to generate proposal. Please try again.</p>
+            )}
+            <DialogFooter>
+              <Button type="button" variant="outline" onClick={() => setProposalDialogOpen(false)}>
+                Cancel
+              </Button>
+              <Button type="submit" disabled={!selectedTemplateId || generateProposal.isPending}>
+                {generateProposal.isPending ? 'Generating...' : (
+                  <>
+                    <FileDown className="h-4 w-4 mr-2" />
+                    Generate
+                  </>
+                )}
+              </Button>
+            </DialogFooter>
+          </form>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

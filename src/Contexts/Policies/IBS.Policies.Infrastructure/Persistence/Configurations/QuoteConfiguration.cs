@@ -60,6 +60,12 @@ public sealed class QuoteConfiguration : IEntityTypeConfiguration<Quote>
         builder.Property(x => x.Notes)
             .HasMaxLength(2000);
 
+        builder.Property(x => x.IsRenewalQuote)
+            .IsRequired()
+            .HasDefaultValue(false);
+
+        builder.Property(x => x.RenewalPolicyId);
+
         builder.Property(x => x.CreatedBy)
             .IsRequired();
 

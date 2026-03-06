@@ -450,6 +450,8 @@ export interface Policy extends PolicySummary {
   boundAt?: string;
   cancellationDate?: string;
   cancellationReason?: string;
+  reinstatementDate?: string;
+  reinstatementReason?: string;
   coverages: Coverage[];
   endorsements: Endorsement[];
   updatedAt?: string;
@@ -510,6 +512,13 @@ export interface CancelPolicyRequest {
   cancellationDate: string;
   reason: string;
   cancellationType: CancellationType;
+}
+
+/**
+ * Request payload for reinstating a cancelled policy.
+ */
+export interface ReinstatePolicyRequest {
+  reason: string;
 }
 
 /**
@@ -1058,6 +1067,87 @@ export interface PaginationParams {
 }
 
 /**
+ * Current policy information for renewal comparison.
+ */
+export interface CurrentPolicyInfo {
+  policyNumber: string;
+  carrierName?: string;
+  totalPremium: number;
+  currency: string;
+  effectiveDate: string;
+  expirationDate: string;
+  coverages: string[];
+}
+
+/**
+ * A single renewal carrier offer for comparison.
+ */
+export interface RenewalOfferDto {
+  quoteId: string;
+  quoteCarrierId: string;
+  carrierId: string;
+  carrierName?: string;
+  premiumAmount?: number;
+  conditions?: string;
+  proposedCoverages?: string;
+  status: string;
+  premiumDifference?: number;
+  premiumDifferencePercent?: number;
+}
+
+/**
+ * Renewal comparison result.
+ */
+export interface RenewalComparisonDto {
+  currentPolicy: CurrentPolicyInfo;
+  renewalOffers: RenewalOfferDto[];
+}
+
+/**
+ * Policy history event types.
+ */
+export type PolicyHistoryEventType =
+  | 'Created'
+  | 'Bound'
+  | 'Activated'
+  | 'Cancelled'
+  | 'Reinstated'
+  | 'Renewed'
+  | 'Expired'
+  | 'NonRenewed'
+  | 'CoverageAdded'
+  | 'CoverageModified'
+  | 'CoverageRemoved'
+  | 'EndorsementAdded'
+  | 'EndorsementApproved'
+  | 'EndorsementIssued'
+  | 'EndorsementRejected'
+  | 'PremiumChanged';
+
+/**
+ * A single entry in a policy's audit history.
+ */
+export interface PolicyHistoryItem {
+  id: string;
+  eventType: PolicyHistoryEventType;
+  description: string;
+  changesJson?: string;
+  userId?: string;
+  timestamp: string;
+}
+
+/**
+ * Paginated result of policy history entries.
+ */
+export interface PolicyHistoryResult {
+  items: PolicyHistoryItem[];
+  totalCount: number;
+  pageNumber: number;
+  pageSize: number;
+  totalPages: number;
+}
+
+/**
  * Policy list filtering parameters.
  */
 export interface PolicyFilters extends PaginationParams {
@@ -1340,13 +1430,13 @@ export interface CreateResponse {
 // ============================================
 
 /** Entity types that a document can be linked to. */
-export type DocumentEntityType = 'Policy' | 'Client' | 'Claim' | 'Carrier' | 'General';
+export type DocumentEntityType = 'Policy' | 'Client' | 'Claim' | 'Carrier' | 'Quote' | 'General';
 
 /** Document category types. */
-export type DocumentCategory = 'Policy' | 'Endorsement' | 'COI' | 'ClaimReport' | 'KYC' | 'Invoice' | 'Other';
+export type DocumentCategory = 'Policy' | 'Endorsement' | 'COI' | 'ClaimReport' | 'KYC' | 'Invoice' | 'Proposal' | 'Other';
 
 /** Document template types. */
-export type TemplateType = 'CertificateOfInsurance' | 'PolicySummary';
+export type TemplateType = 'CertificateOfInsurance' | 'PolicySummary' | 'Proposal';
 
 /** Summary of a document in a list. */
 export interface DocumentListItem {
@@ -1440,6 +1530,12 @@ export interface UpdateDocumentTemplateRequest {
 export interface GenerateCOIRequest {
   templateId: string;
   policyId: string;
+}
+
+/** Request to generate a proposal PDF from a quote. */
+export interface GenerateProposalRequest {
+  templateId: string;
+  quoteId: string;
 }
 
 /** Result of an AI-powered PDF template import. */

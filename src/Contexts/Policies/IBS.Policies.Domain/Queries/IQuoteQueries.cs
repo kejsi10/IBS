@@ -46,6 +46,18 @@ public interface IQuoteQueries
     /// <param name="cancellationToken">Cancellation token.</param>
     /// <returns>Quote summary statistics.</returns>
     Task<QuoteSummaryStats> GetSummaryAsync(Guid tenantId, CancellationToken cancellationToken = default);
+
+    /// <summary>
+    /// Gets renewal quotes linked to a specific policy.
+    /// </summary>
+    /// <param name="tenantId">The tenant identifier.</param>
+    /// <param name="renewalPolicyId">The policy being renewed.</param>
+    /// <param name="cancellationToken">Cancellation token.</param>
+    /// <returns>List of renewal quote details.</returns>
+    Task<IReadOnlyList<QuoteDetailReadModel>> GetRenewalQuotesAsync(
+        Guid tenantId,
+        Guid renewalPolicyId,
+        CancellationToken cancellationToken = default);
 }
 
 /// <summary>
