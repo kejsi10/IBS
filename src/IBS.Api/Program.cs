@@ -35,6 +35,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using Serilog;
+using Serilog.Sinks.ApplicationInsights.TelemetryConverters;
 
 // Configure Serilog
 Log.Logger = new LoggerConfiguration()
@@ -47,12 +48,18 @@ try
 
     var builder = WebApplication.CreateBuilder(args);
 
-    // Configure Serilog
+    // Add Application Insights (reads APPLICATIONINSIGHTS_CONNECTION_STRING env var automatically)
+    builder.Services.AddApplicationInsightsTelemetry();
+
+    // Configure Serilog — also sink to Application Insights so structured logs appear in AI
     builder.Host.UseSerilog((context, services, configuration) => configuration
         .ReadFrom.Configuration(context.Configuration)
         .ReadFrom.Services(services)
         .Enrich.FromLogContext()
-        .WriteTo.Console());
+        .WriteTo.Console()
+        .WriteTo.ApplicationInsights(
+            services.GetRequiredService<Microsoft.ApplicationInsights.TelemetryClient>(),
+            TelemetryConverter.Traces));
 
     // Add configuration
     var jwtSettings = builder.Configuration.GetSection(JwtSettings.SectionName).Get<JwtSettings>()
